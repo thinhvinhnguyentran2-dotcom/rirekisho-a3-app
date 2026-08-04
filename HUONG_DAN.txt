@@ -1,0 +1,8 @@
+BAN SUA LOI PDF V2.0.1
+
+1. Dong trang localhost:5500.
+2. Chay RESET_PORT_5500.bat.
+3. Sao chep 4 file app.js, styles.css, index.html, service-worker.js vao thu muc du an cu va chon Replace.
+4. Chay lai START_LOCAL.bat.
+5. Trong Chrome nhan Ctrl+Shift+R. Neu van la ban cu: F12 > Application > Service Workers > Unregister, sau do Storage > Clear site data.
+6. Trong ung dung chon PDF 180 dpi va thu lai.

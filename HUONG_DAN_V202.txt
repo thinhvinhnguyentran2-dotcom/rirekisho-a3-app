@@ -1,0 +1,8 @@
+RIREKISHO A3 PATCH v2.0.2
+
+- Loai bo cache/Service Worker cu tren localhost.
+- An lop PDF bi ket ngay khi khoi dong.
+- Tu dong dong lop phu khi co loi.
+- Co timeout va tu dong thu lai o 120 dpi.
+- Nhan phim ESC de dong lop PDF trong truong hop can thiet.
+- Console dung phai hien: 履歴書 A3 作成アプリ v2.0.2
