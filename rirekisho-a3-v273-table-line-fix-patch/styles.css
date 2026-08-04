@@ -1088,7 +1088,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.7.4: keep the mobile toolbar/header sticky while the form or preview scrolls. */
+/* v2.7.1: keep the mobile toolbar/header sticky while the form or preview scrolls. */
 @media (max-width: 980px) {
   .app-header {
     position: sticky !important;
@@ -1170,7 +1170,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.7.4: keep Save, Save PDF and Share PDF always visible in the sticky mobile header. */
+/* v2.7.3: keep Save, Save PDF and Share PDF always visible in the sticky mobile header. */
 .header-secondary,
 .essential-actions {
   display: contents;
@@ -1249,7 +1249,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.7.4: clip stray extra lines so borders stay neatly inside each table/box. */
+/* v2.7.3: clip stray extra lines so borders stay neatly inside each table/box. */
 .resume-sheet .identity-table,
 .resume-sheet .contact-table,
 .resume-sheet .history-section,

@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.7.4';
+const APP_VERSION = '2.7.3';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
