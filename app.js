@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.6.9';
+const APP_VERSION = '2.7.1';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -1451,22 +1451,66 @@ function applyPrintSettings() {
   requestAnimationFrame(() => { applyTableLayout(); applyPreviewScale(); });
 }
 
-function fitElement(element, minPx = 8) {
+function elementOverflows(element) {
+  return element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1;
+}
+
+function getTypographyLimits(element, fallbackMin = 9, fallbackMax = 11) {
+  if (element.matches('.name-value')) return { min: 14, max: 16.5 };
+  if (element.matches('.name-kana-value')) return { min: 10.5, max: 12 };
+  if (element.matches('.row-cell.year, .row-cell.month')) return { min: 9.4, max: 10.6 };
+  if (element.matches('.row-cell.text')) return { min: 9.4, max: 10.8 };
+  if (element.matches('.section-caption')) return { min: 8.5, max: 9.6 };
+  if (element.matches('[data-field="addressKana"], [data-field="address"], [data-field="contactKana"], [data-field="contactAddress"]')) return { min: 9.2, max: 10.5 };
+  if (element.matches('[data-field="phone"], [data-field="email"], [data-field="contactPhone"], #birthText')) return { min: 9.2, max: 10.5 };
+  if (element.matches('.side-box > .editable')) return { min: 9.3, max: 10.6 };
+  return { min: fallbackMin, max: fallbackMax };
+}
+
+function fitElement(element, minPx = null, maxPx = null) {
   if (!element || !element.isConnected) return;
-  const baseFontSize = element.dataset.baseFontSize || '';
-  element.style.fontSize = baseFontSize;
-  const computed = getComputedStyle(element);
-  let size = parseFloat(computed.fontSize) || 12;
+  const limits = getTypographyLimits(element);
+  const dataBase = parseFloat(element.dataset.baseFontSize || '');
+  const computedBase = parseFloat(getComputedStyle(element).fontSize) || limits.max;
+  const upper = Number.isFinite(maxPx) ? maxPx : (Number.isFinite(dataBase) ? dataBase : Math.min(computedBase, limits.max));
+  const lower = Number.isFinite(minPx) ? minPx : limits.min;
+  let size = Math.max(lower, upper);
+  element.style.fontSize = `${size}px`;
   let guard = 0;
-  while ((element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1) && size > minPx && guard < 30) {
-    size -= 0.4;
+  while (elementOverflows(element) && size > lower && guard < 40) {
+    size = Math.max(lower, size - 0.25);
     element.style.fontSize = `${size}px`;
     guard += 1;
   }
 }
 
+function fitUniformGroup(selector, minPx, maxPx, handled) {
+  const elements = $$(selector).filter(el => el.isConnected && !el.matches('[data-field="motivation"], [data-field="requests"]'));
+  if (!elements.length) return;
+  let size = maxPx;
+  for (const element of elements) element.style.fontSize = `${size}px`;
+  let guard = 0;
+  while (elements.some(elementOverflows) && size > minPx && guard < 40) {
+    size = Math.max(minPx, size - 0.25);
+    for (const element of elements) element.style.fontSize = `${size}px`;
+    guard += 1;
+  }
+  elements.forEach(el => handled.add(el));
+}
+
 function fitAllText() {
-  requestAnimationFrame(() => $$('.fit-text').forEach(el => fitElement(el)));
+  requestAnimationFrame(() => {
+    const handled = new Set();
+    fitUniformGroup('.history-line .row-cell.year, .license-line .row-cell.year', 9.4, 10.6, handled);
+    fitUniformGroup('.history-line .row-cell.month, .license-line .row-cell.month', 9.4, 10.6, handled);
+    fitUniformGroup('.history-line .row-cell.text, .license-line .row-cell.text', 9.4, 10.8, handled);
+    fitUniformGroup('.section-caption.fit-text', 8.5, 9.6, handled);
+    fitUniformGroup('[data-field="addressKana"], [data-field="address"], [data-field="contactKana"], [data-field="contactAddress"]', 9.2, 10.5, handled);
+    fitUniformGroup('[data-field="phone"], [data-field="email"], [data-field="contactPhone"], #birthText', 9.2, 10.5, handled);
+    $$('.fit-text').forEach(element => {
+      if (!handled.has(element)) fitElement(element);
+    });
+  });
 }
 
 function renderAll() {

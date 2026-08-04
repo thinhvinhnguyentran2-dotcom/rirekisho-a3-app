@@ -1026,3 +1026,145 @@ body.ui-lang-ne .control-panel { width: auto; }
 .motivation-side .fixed-info-box > .editable {
   min-height: 6mm !important;
 }
+
+
+/* v2.7.0: harmonious resume typography with consistent size levels */
+.resume-sheet {
+  --resume-font-body: 2.78mm;
+  --resume-font-label: 2.48mm;
+  --resume-font-small: 2.10mm;
+  --resume-font-caption: 2.48mm;
+  --resume-font-name-kana: 3.05mm;
+  --resume-font-name: 4.25mm;
+  font-size: var(--resume-font-body);
+  line-height: 1.16;
+}
+.resume-sheet .field-label,
+.resume-sheet .table-header,
+.resume-sheet .phone-label,
+.resume-sheet .contact-caption,
+.resume-sheet .section-caption {
+  font-size: var(--resume-font-label);
+  line-height: 1.15;
+  font-weight: 500;
+}
+.resume-sheet .row-cell,
+.resume-sheet .editable,
+.resume-sheet .birth-content,
+.resume-sheet .gender-box {
+  font-size: var(--resume-font-body);
+  line-height: 1.14;
+  font-weight: 400;
+}
+.resume-sheet .name-kana-value {
+  font-size: var(--resume-font-name-kana);
+  font-weight: 400;
+  letter-spacing: .2mm;
+}
+.resume-sheet .name-value {
+  font-size: var(--resume-font-name);
+  font-weight: 600;
+  letter-spacing: .25mm;
+}
+.resume-sheet .history-line.section-row .row-cell.text,
+.resume-sheet .license-line.section-row .row-cell.text {
+  font-weight: 600;
+}
+.resume-sheet .instructions.resume-footer-notes {
+  font-size: var(--resume-font-small) !important;
+  line-height: 1.28 !important;
+}
+.resume-sheet .contact-caption small {
+  font-size: var(--resume-font-small);
+}
+.resume-sheet .editable:empty::before {
+  font-size: inherit;
+}
+@media print {
+  .resume-sheet {
+    font-size: var(--resume-font-body);
+    line-height: 1.16;
+  }
+}
+
+
+/* v2.7.1: keep the mobile toolbar/header sticky while the form or preview scrolls. */
+@media (max-width: 980px) {
+  .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 120 !important;
+    width: 100%;
+    padding-top: max(9px, env(safe-area-inset-top));
+    box-shadow: 0 5px 18px rgba(15, 23, 42, .28);
+  }
+
+  .brand-block {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .brand-block > div:last-child {
+    min-width: 0;
+  }
+
+  .app-header h1,
+  .app-header p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-actions {
+    display: flex;
+    flex-wrap: nowrap !important;
+    width: 100%;
+    max-width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 1px 0 4px;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .header-actions > *,
+  .header-actions button,
+  .header-actions .language-picker {
+    flex: 0 0 auto !important;
+  }
+
+  .mobile-switch {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-header {
+    gap: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 8px;
+  }
+
+  .brand-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 20px;
+  }
+
+  .app-header h1 {
+    font-size: 15px;
+  }
+
+  .app-header p {
+    font-size: 10px;
+  }
+
+  .header-actions button,
+  .header-actions .language-picker {
+    min-height: 38px;
+  }
+}
