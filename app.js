@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.8.7';
+const APP_VERSION = '2.8.9';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -102,6 +102,7 @@ let toastTimer = null;
 let autosaveTimer = null;
 let snapshotTimer = null;
 let deferredInstallPrompt = null;
+let mobileSectionResizeObserver = null;
 let undoStack = [];
 let undoIndex = -1;
 let pdfOperationActive = false;
@@ -187,52 +188,199 @@ function ensureMobileSummaryLabels() {
 }
 
 
-function bindImmediateMobileAccordion() {
-  document.querySelectorAll('.control-panel details > summary').forEach(summary => {
-    if (summary.dataset.mobileAccordionBound === '1') return;
-    summary.dataset.mobileAccordionBound = '1';
-    summary.setAttribute('role', 'button');
-    summary.setAttribute('tabindex', '0');
 
-    const toggleSection = event => {
-      if (!window.matchMedia('(max-width: 980px)').matches) return;
-      if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+function applyManagedMobileSectionSize(details) {
+  if (!(details instanceof HTMLDetailsElement)) return;
+  const summary = details.querySelector(':scope > summary');
+  const body = details.querySelector(':scope > .details-body');
+  if (!summary || !body) return;
 
-      event.preventDefault();
-      event.stopPropagation();
+  const isMobile = window.matchMedia('(max-width: 980px)').matches;
+  if (!isMobile) {
+    details.style.removeProperty('height');
+    details.style.removeProperty('min-height');
+    details.style.removeProperty('max-height');
+    details.style.removeProperty('overflow');
+    body.style.removeProperty('position');
+    body.style.removeProperty('inset');
+    body.style.removeProperty('transform');
+    body.style.removeProperty('float');
+    return;
+  }
 
-      const details = summary.parentElement;
-      if (!(details instanceof HTMLDetailsElement)) return;
+  const expanded = details.classList.contains('mobile-section-open');
+  body.style.setProperty('position', 'static', 'important');
+  body.style.setProperty('inset', 'auto', 'important');
+  body.style.setProperty('transform', 'none', 'important');
+  body.style.setProperty('float', 'none', 'important');
+  details.style.setProperty('overflow', 'visible', 'important');
+  details.style.setProperty('max-height', 'none', 'important');
 
-      const nextOpen = !details.open;
-      details.open = nextOpen;
-      summary.setAttribute('aria-expanded', String(nextOpen));
+  if (!expanded) {
+    body.style.setProperty('display', 'none', 'important');
+    details.style.setProperty('height', `${Math.ceil(summary.getBoundingClientRect().height)}px`, 'important');
+    details.style.setProperty('min-height', `${Math.ceil(summary.getBoundingClientRect().height)}px`, 'important');
+    return;
+  }
 
-      // Apply the state immediately, then keep the tapped heading visible without jumping to page top.
-      requestAnimationFrame(() => {
-        const container = getMobileScrollContainer();
-        if (container) {
-          const summaryRect = summary.getBoundingClientRect();
-          const containerRect = container.getBoundingClientRect();
-          if (summaryRect.top < containerRect.top || summaryRect.bottom > containerRect.bottom) {
-            summary.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
-          }
-        }
-        if (nextOpen) fitAllText();
-      });
-    };
+  body.style.setProperty('display', 'block', 'important');
+  body.style.setProperty('visibility', 'visible', 'important');
+  body.style.setProperty('opacity', '1', 'important');
+  body.style.setProperty('height', 'auto', 'important');
+  body.style.setProperty('max-height', 'none', 'important');
+  body.style.setProperty('overflow', 'visible', 'important');
 
-    summary.addEventListener('click', toggleSection, { passive: false });
-    summary.addEventListener('keydown', toggleSection);
+  // Explicitly reserve the complete expanded height. Some mobile browsers paint the
+  // body but keep the native <details> grid item at summary height, which causes the
+  // following sections to overlap the fields.
+  const summaryHeight = Math.ceil(summary.getBoundingClientRect().height);
+  const bodyHeight = Math.ceil(Math.max(body.scrollHeight, body.getBoundingClientRect().height));
+  const totalHeight = Math.max(summaryHeight + bodyHeight, summaryHeight + 1);
+  details.style.setProperty('height', `${totalHeight}px`, 'important');
+  details.style.setProperty('min-height', `${totalHeight}px`, 'important');
+}
+
+function refreshManagedMobileSectionSizes() {
+  document.querySelectorAll('.control-panel details.mobile-managed-section').forEach(applyManagedMobileSectionSize);
+}
+
+function observeManagedMobileSections() {
+  if (!('ResizeObserver' in window)) return;
+  mobileSectionResizeObserver?.disconnect();
+  mobileSectionResizeObserver = new ResizeObserver(entries => {
+    for (const entry of entries) {
+      const details = entry.target.closest?.('.control-panel details.mobile-managed-section');
+      if (details?.classList.contains('mobile-section-open')) applyManagedMobileSectionSize(details);
+    }
   });
+  document.querySelectorAll('.control-panel details.mobile-managed-section > .details-body').forEach(body => {
+    mobileSectionResizeObserver.observe(body);
+  });
+}
 
-  document.querySelectorAll('.control-panel details').forEach(details => {
+function syncManagedMobileSections() {
+  const isMobile = window.matchMedia('(max-width: 980px)').matches;
+  document.querySelectorAll('.control-panel details').forEach((details, index) => {
     const summary = details.querySelector(':scope > summary');
-    if (summary) summary.setAttribute('aria-expanded', String(details.open));
-    details.addEventListener('toggle', () => {
-      summary?.setAttribute('aria-expanded', String(details.open));
-    });
+    const body = details.querySelector(':scope > .details-body');
+    if (!summary || !body) return;
+
+    if (!isMobile) {
+      if (details.dataset.desktopOpenBeforeMobile === '1') details.open = true;
+      else if (details.dataset.desktopOpenBeforeMobile === '0') details.open = false;
+      details.classList.remove('mobile-managed-section', 'mobile-section-open');
+      body.style.removeProperty('display');
+      body.style.removeProperty('visibility');
+      body.style.removeProperty('opacity');
+      body.style.removeProperty('height');
+      body.style.removeProperty('max-height');
+      body.style.removeProperty('overflow');
+      summary.setAttribute('aria-expanded', String(details.open));
+      applyManagedMobileSectionSize(details);
+      return;
+    }
+
+    if (!details.classList.contains('mobile-managed-section')) {
+      details.dataset.desktopOpenBeforeMobile = details.open ? '1' : '0';
+      const initiallyOpen = details.open || index === 0;
+      details.classList.add('mobile-managed-section');
+      details.classList.toggle('mobile-section-open', initiallyOpen);
+    }
+
+    // Keep the native <details> element open on mobile. Visibility is controlled only by
+    // .mobile-section-open, avoiding Safari/Chrome double-toggle and hidden-content bugs.
+    details.open = true;
+    const expanded = details.classList.contains('mobile-section-open');
+    summary.setAttribute('aria-expanded', String(expanded));
+    body.hidden = false;
+    body.removeAttribute('hidden');
+    if (expanded) {
+      body.style.setProperty('display', 'block', 'important');
+      body.style.setProperty('visibility', 'visible', 'important');
+      body.style.setProperty('opacity', '1', 'important');
+      body.style.setProperty('height', 'auto', 'important');
+      body.style.setProperty('max-height', 'none', 'important');
+      body.style.setProperty('overflow', 'visible', 'important');
+    } else {
+      body.style.setProperty('display', 'none', 'important');
+    }
+    applyManagedMobileSectionSize(details);
   });
+  requestAnimationFrame(() => {
+    refreshManagedMobileSectionSizes();
+    observeManagedMobileSections();
+  });
+}
+
+function bindImmediateMobileAccordion() {
+  const panel = document.querySelector('.control-panel');
+  if (!panel || panel.dataset.mobileAccordionDelegated === '1') {
+    syncManagedMobileSections();
+    return;
+  }
+  panel.dataset.mobileAccordionDelegated = '1';
+
+  const activateSummary = event => {
+    if (!window.matchMedia('(max-width: 980px)').matches) return;
+    const summary = event.target instanceof Element ? event.target.closest('.control-panel details > summary') : null;
+    if (!summary || !panel.contains(summary)) return;
+    if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+
+    const details = summary.parentElement;
+    const body = details?.querySelector(':scope > .details-body');
+    if (!(details instanceof HTMLDetailsElement) || !body) return;
+
+    // Always keep native details open and manage only our explicit mobile class.
+    details.open = true;
+    const nextOpen = !details.classList.contains('mobile-section-open');
+    details.classList.add('mobile-managed-section');
+    details.classList.toggle('mobile-section-open', nextOpen);
+    summary.setAttribute('aria-expanded', String(nextOpen));
+    body.hidden = false;
+    body.removeAttribute('hidden');
+
+    if (nextOpen) {
+      body.style.setProperty('display', 'block', 'important');
+      body.style.setProperty('visibility', 'visible', 'important');
+      body.style.setProperty('opacity', '1', 'important');
+      body.style.setProperty('height', 'auto', 'important');
+      body.style.setProperty('max-height', 'none', 'important');
+      body.style.setProperty('overflow', 'visible', 'important');
+    } else {
+      body.style.setProperty('display', 'none', 'important');
+    }
+    applyManagedMobileSectionSize(details);
+
+    requestAnimationFrame(() => {
+      applyManagedMobileSectionSize(details);
+      const container = getMobileScrollContainer();
+      if (container) {
+        const summaryRect = summary.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        if (summaryRect.top < containerRect.top || summaryRect.bottom > containerRect.bottom) {
+          summary.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+        }
+      }
+      if (nextOpen) {
+        fitAllText();
+        applyManagedMobileSectionSize(details);
+        const firstField = body.querySelector('input, select, textarea, button');
+        if (firstField) firstField.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+      }
+    });
+  };
+
+  // Capture phase prevents the browser's native <summary> toggle from immediately undoing
+  // the manual mobile state on Safari and Chromium-based mobile browsers.
+  panel.addEventListener('click', activateSummary, { capture: true, passive: false });
+  panel.addEventListener('keydown', activateSummary, { capture: true });
+  panel.addEventListener('input', () => requestAnimationFrame(refreshManagedMobileSectionSizes), { passive: true });
+  panel.addEventListener('change', () => requestAnimationFrame(refreshManagedMobileSectionSizes), { passive: true });
+  syncManagedMobileSections();
 }
 
 
@@ -1767,6 +1915,7 @@ function handleViewportResizeStable() {
     }
 
     applyMobileHeaderPreference({ preserveScroll: true });
+    syncManagedMobileSections();
     if (!isMobileNow || document.body.classList.contains('mobile-preview')) applyPreviewScale();
     fitAllText();
     updateInstallPromotion();
@@ -2374,7 +2523,7 @@ function printResumeNow() {
     $$('.selected').forEach(element => element.classList.remove('selected'));
     fitAllText();
     applyTableLayout();
-    showToast('A3横・倍率100%で印刷してください。v2.8.7では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
+    showToast('A3横・倍率100%で印刷してください。v2.8.9では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
     if (typeof window.print !== 'function') throw new Error('このブラウザは印刷機能に対応していません。');
     window.print();
   } catch (error) {
@@ -2997,7 +3146,7 @@ async function registerServiceWorker() {
     }
     return;
   }
-  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.7'); } catch (error) { console.warn('Service worker registration failed', error); }
+  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.9'); } catch (error) { console.warn('Service worker registration failed', error); }
 }
 
 function init() {
@@ -3010,16 +3159,19 @@ function init() {
   ensureOfficialFooter();
   ensureMobileSummaryLabels();
   bindImmediateMobileAccordion();
+  requestAnimationFrame(() => { refreshManagedMobileSectionSizes(); observeManagedMobileSections(); });
   loadStorage();
   bindEvents();
   resetUndo();
   renderAll();
   setMobileView('editor');
+  syncManagedMobileSections();
   applyMobileHeaderPreference({ preserveScroll: false });
   updateInstallPromotion();
   registerServiceWorker();
   requestAnimationFrame(() => forceCloseBusyOverlay());
   setTimeout(() => { if (!pdfOperationActive) forceCloseBusyOverlay(); }, 800);
+  window.addEventListener('resize', () => requestAnimationFrame(refreshManagedMobileSectionSizes), { passive: true });
   console.info(`履歴書 A3 作成アプリ v${APP_VERSION}`);
 }
 
