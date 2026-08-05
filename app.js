@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.8.3';
+const APP_VERSION = '2.8.4';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -26,7 +26,7 @@ const REQUEST_HEIGHT_MIN_MM = 12;
 const INFO_BOX_MIN_HEIGHT_MM = 12;
 const ZIPCLOUD_API_URL = 'https://zipcloud.ibsnet.co.jp/api/search';
 const INSTALL_DONE_KEY = 'rirekisho-a3-install-done';
-const MOBILE_HEADER_REVEAL_DELAY_MS = 3000;
+const MOBILE_HEADER_COLLAPSED_KEY = 'rirekisho-mobile-header-collapsed-v1';
 const APP_PUBLIC_URL = 'https://thinhvinhnguyentran2-dotcom.github.io/rirekisho-a3-app/';
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -112,10 +112,7 @@ let postalLookupResults = [];
 let mobileEditorScrollY = 0;
 let mobilePreviewScrollY = 0;
 let lastMobileEditorControlId = '';
-let mobileHeaderRevealTimer = null;
-let mobileScrollRaf = 0;
 let mobileResizeTimer = null;
-let lastTrackedScrollY = window.scrollY || 0;
 let mobileViewportState = window.matchMedia('(max-width: 980px)').matches;
 let photoEditor = {
   image: null,
@@ -1589,7 +1586,15 @@ function applyPreviewScale() {
   stage.style.height = `${page.offsetHeight * scale}px`;
 }
 
+function getMobileScrollContainer(view = null) {
+  if (!window.matchMedia('(max-width: 980px)').matches) return null;
+  const preview = view === 'preview' || (!view && document.body.classList.contains('mobile-preview'));
+  return preview ? $('.preview-shell') : $('.control-panel');
+}
+
 function currentDocumentScrollY() {
+  const container = getMobileScrollContainer();
+  if (container) return Math.max(0, container.scrollTop || 0);
   return Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
 }
 
@@ -1600,34 +1605,60 @@ function rememberMobileScrollPosition() {
   else if (document.body.classList.contains('mobile-editor')) mobileEditorScrollY = y;
 }
 
-function revealMobileHeader(delay = 0) {
-  clearTimeout(mobileHeaderRevealTimer);
-  const reveal = () => {
-    document.body.classList.remove('mobile-header-hidden');
-    document.body.classList.add('mobile-header-settling');
-    setTimeout(() => document.body.classList.remove('mobile-header-settling'), 150);
-  };
-  if (delay > 0) mobileHeaderRevealTimer = setTimeout(reveal, delay);
-  else reveal();
+function translatedUiText(source) {
+  return window.RirekishoI18n?.t?.(source) || source;
 }
 
-function handleMobileWindowScroll() {
-  if (!window.matchMedia('(max-width: 980px)').matches) return;
-  if (mobileScrollRaf) return;
-  mobileScrollRaf = requestAnimationFrame(() => {
-    mobileScrollRaf = 0;
-    const y = currentDocumentScrollY();
-    const moved = Math.abs(y - lastTrackedScrollY);
-    rememberMobileScrollPosition();
-    if (moved > 1.5 && y > 12) {
-      document.body.classList.add('mobile-header-hidden');
-      clearTimeout(mobileHeaderRevealTimer);
-      mobileHeaderRevealTimer = setTimeout(() => revealMobileHeader(), MOBILE_HEADER_REVEAL_DELAY_MS);
-    } else if (y <= 12) {
-      revealMobileHeader();
-    }
-    lastTrackedScrollY = y;
+function updateMobileHeaderMenuButton(collapsed) {
+  const button = $('#mobileHeaderMenuBtn');
+  if (!button) return;
+  const source = collapsed ? 'メニューを開く' : 'メニューを閉じる';
+  const translated = translatedUiText(source);
+  button.textContent = translated;
+  button.setAttribute('aria-label', translated);
+  button.setAttribute('title', translated);
+  button.setAttribute('aria-expanded', String(!collapsed));
+}
+
+function setMobileHeaderCollapsed(collapsed, options = {}) {
+  const { persist = true, preserveScroll = true } = options;
+  const isMobile = window.matchMedia('(max-width: 980px)').matches;
+  const expandable = $('#mobileHeaderExpandable');
+  if (!expandable) return;
+
+  if (!isMobile) {
+    expandable.hidden = false;
+    document.body.classList.remove('mobile-header-collapsed');
+    updateMobileHeaderMenuButton(false);
+    return;
+  }
+
+  const container = getMobileScrollContainer();
+  const currentScroll = preserveScroll && container ? container.scrollTop : null;
+  document.body.classList.toggle('mobile-header-collapsed', Boolean(collapsed));
+  expandable.hidden = Boolean(collapsed);
+  updateMobileHeaderMenuButton(Boolean(collapsed));
+  if (persist) storage.setItem(MOBILE_HEADER_COLLAPSED_KEY, collapsed ? '1' : '0');
+
+  requestAnimationFrame(() => {
+    if (container && currentScroll !== null) container.scrollTop = currentScroll;
+    if (document.body.classList.contains('mobile-preview')) applyPreviewScale();
   });
+}
+
+function applyMobileHeaderPreference(options = {}) {
+  const isMobile = window.matchMedia('(max-width: 980px)').matches;
+  if (!isMobile) {
+    setMobileHeaderCollapsed(false, { persist: false, preserveScroll: false });
+    return;
+  }
+  const collapsed = storage.getItem(MOBILE_HEADER_COLLAPSED_KEY) === '1';
+  setMobileHeaderCollapsed(collapsed, { persist: false, preserveScroll: options.preserveScroll !== false });
+}
+
+function toggleMobileHeaderMenu() {
+  const collapsed = document.body.classList.contains('mobile-header-collapsed');
+  setMobileHeaderCollapsed(!collapsed);
 }
 
 function handleViewportResizeStable() {
@@ -1646,10 +1677,11 @@ function handleViewportResizeStable() {
         }
       } else {
         rememberMobileScrollPosition();
-        document.body.classList.remove('mobile-editor', 'mobile-preview', 'mobile-header-hidden', 'mobile-header-settling');
+        document.body.classList.remove('mobile-editor', 'mobile-preview', 'mobile-header-collapsed');
       }
     }
 
+    applyMobileHeaderPreference({ preserveScroll: true });
     if (!isMobileNow || document.body.classList.contains('mobile-preview')) applyPreviewScale();
     fitAllText();
     updateInstallPromotion();
@@ -1661,11 +1693,13 @@ function setMobileView(view) {
   const wasPreview = document.body.classList.contains('mobile-preview');
   const wasEditor = document.body.classList.contains('mobile-editor');
   if (!isMobile) {
-    document.body.classList.remove('mobile-editor', 'mobile-preview', 'mobile-header-hidden');
+    document.body.classList.remove('mobile-editor', 'mobile-preview', 'mobile-header-collapsed');
+    applyMobileHeaderPreference({ preserveScroll: false });
     return;
   }
 
-  const currentY = currentDocumentScrollY();
+  const oldContainer = getMobileScrollContainer(wasPreview ? 'preview' : 'editor');
+  const currentY = oldContainer ? oldContainer.scrollTop : 0;
   if (wasPreview) mobilePreviewScrollY = currentY;
   if (wasEditor) mobileEditorScrollY = currentY;
 
@@ -1674,7 +1708,7 @@ function setMobileView(view) {
   document.body.classList.add(showPreview ? 'mobile-preview' : 'mobile-editor');
   $('#mobileEditViewBtn')?.classList.toggle('active', !showPreview);
   $('#mobilePreviewViewBtn')?.classList.toggle('active', showPreview);
-  revealMobileHeader();
+  applyMobileHeaderPreference({ preserveScroll: false });
 
   const targetY = showPreview ? mobilePreviewScrollY : mobileEditorScrollY;
   requestAnimationFrame(() => {
@@ -1683,8 +1717,8 @@ function setMobileView(view) {
       fitAllText();
     }
     requestAnimationFrame(() => {
-      window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior: 'auto' });
-      lastTrackedScrollY = Math.max(0, targetY);
+      const targetContainer = getMobileScrollContainer(showPreview ? 'preview' : 'editor');
+      if (targetContainer) targetContainer.scrollTop = Math.max(0, targetY);
       if (!showPreview) {
         const previousControl = lastMobileEditorControlId ? document.getElementById(lastMobileEditorControlId) : null;
         if (previousControl && !previousControl.closest('details:not([open])')) {
@@ -1695,7 +1729,6 @@ function setMobileView(view) {
     });
   });
 }
-
 
 function createNewDocument() {
   if (!confirm('新しい履歴書を作成しますか？現在の内容は自動保存されています。')) return;
@@ -2256,7 +2289,7 @@ function printResumeNow() {
     $$('.selected').forEach(element => element.classList.remove('selected'));
     fitAllText();
     applyTableLayout();
-    showToast('A3横・倍率100%で印刷してください。v2.8.3では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
+    showToast('A3横・倍率100%で印刷してください。v2.8.4では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
     if (typeof window.print !== 'function') throw new Error('このブラウザは印刷機能に対応していません。');
     window.print();
   } catch (error) {
@@ -2710,15 +2743,18 @@ function bindEvents() {
       lastMobileEditorControlId = target.id;
     }
   });
+  $('#mobileHeaderMenuBtn')?.addEventListener('click', toggleMobileHeaderMenu);
   $('#mobileEditViewBtn')?.addEventListener('click', () => setMobileView('editor'));
   $('#mobilePreviewViewBtn')?.addEventListener('click', () => setMobileView('preview'));
+  $('.control-panel')?.addEventListener('scroll', rememberMobileScrollPosition, { passive: true });
+  $('.preview-shell')?.addEventListener('scroll', rememberMobileScrollPosition, { passive: true });
   $('#previewZoom').addEventListener('input', () => { if (!$('#autoZoom').checked) applyPreviewScale(); });
   $('#autoZoom').addEventListener('change', applyPreviewScale);
   window.addEventListener('beforeprint', applyPrintSettings);
   window.addEventListener('resize', handleViewportResizeStable, { passive: true });
   window.addEventListener('orientationchange', handleViewportResizeStable, { passive: true });
-  window.addEventListener('scroll', handleMobileWindowScroll, { passive: true });
   window.addEventListener('beforeunload', () => persistDocuments(false));
+  window.addEventListener('rirekisho-language-changed', () => updateMobileHeaderMenuButton(document.body.classList.contains('mobile-header-collapsed')));
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
@@ -2876,7 +2912,7 @@ async function registerServiceWorker() {
     }
     return;
   }
-  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.3'); } catch (error) { console.warn('Service worker registration failed', error); }
+  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.4'); } catch (error) { console.warn('Service worker registration failed', error); }
 }
 
 function init() {
@@ -2892,8 +2928,7 @@ function init() {
   resetUndo();
   renderAll();
   setMobileView('editor');
-  lastTrackedScrollY = currentDocumentScrollY();
-  revealMobileHeader();
+  applyMobileHeaderPreference({ preserveScroll: false });
   updateInstallPromotion();
   registerServiceWorker();
   requestAnimationFrame(() => forceCloseBusyOverlay());

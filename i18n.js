@@ -227,6 +227,11 @@
     "履歴書全体のバランスを優先し、左側を十分に確保してから右側へ続けて表示します。資格欄と通勤時間・扶養家族数の固定2枠は、崩れない標準サイズを維持します。":{"vi":"Ưu tiên sự cân đối của toàn bộ hồ sơ: giữ đủ không gian bên trái rồi mới tiếp tục sang bên phải. Bảng bằng cấp và hai ô cố định Thời gian đi làm/Số người phụ thuộc luôn giữ kích thước chuẩn.","en":"The whole resume is balanced first: the left side keeps sufficient space before content continues on the right. The qualification table and the two fixed commute/dependent boxes retain standard dimensions.","ne":"सम्पूर्ण बायोडाटाको सन्तुलनलाई प्राथमिकता दिइन्छ: दायाँतर्फ जारी गर्नुअघि बायाँतर्फ पर्याप्त ठाउँ राखिन्छ। योग्यता तालिका र आवागमन समय/आश्रित सङ्ख्याका दुई स्थिर बाकस मानक आकारमै रहन्छन्।"}
   });
 
+  Object.assign(TRANSLATIONS, {
+    "メニューを開く":{"vi":"Mở menu","en":"Open menu","ne":"मेनु खोल्नुहोस्"},
+    "メニューを閉じる":{"vi":"Đóng menu","en":"Close menu","ne":"मेनु बन्द गर्नुहोस्"}
+  });
+
   function translateAttributes(el) {
     if (shouldSkip(el)) return;
     for (const attr of ['placeholder', 'title', 'aria-label', 'label']) {
