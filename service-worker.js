@@ -1,10 +1,10 @@
-const CACHE_NAME = 'rirekisho-a3-v2.8.6';
+const CACHE_NAME = 'rirekisho-a3-v2.8.7';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=2.8.6',
-  './app.js?v=2.8.6',
-  './i18n.js?v=2.8.6',
+  './styles.css?v=2.8.7',
+  './app.js?v=2.8.7',
+  './i18n.js?v=2.8.7',
   './manifest.json',
   './privacy.html',
   './terms.html',

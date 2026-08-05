@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.8.6';
+const APP_VERSION = '2.8.7';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -184,6 +184,55 @@ function ensureMobileSummaryLabels() {
     }
   });
   window.RirekishoI18n?.apply?.(document, true);
+}
+
+
+function bindImmediateMobileAccordion() {
+  document.querySelectorAll('.control-panel details > summary').forEach(summary => {
+    if (summary.dataset.mobileAccordionBound === '1') return;
+    summary.dataset.mobileAccordionBound = '1';
+    summary.setAttribute('role', 'button');
+    summary.setAttribute('tabindex', '0');
+
+    const toggleSection = event => {
+      if (!window.matchMedia('(max-width: 980px)').matches) return;
+      if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const details = summary.parentElement;
+      if (!(details instanceof HTMLDetailsElement)) return;
+
+      const nextOpen = !details.open;
+      details.open = nextOpen;
+      summary.setAttribute('aria-expanded', String(nextOpen));
+
+      // Apply the state immediately, then keep the tapped heading visible without jumping to page top.
+      requestAnimationFrame(() => {
+        const container = getMobileScrollContainer();
+        if (container) {
+          const summaryRect = summary.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          if (summaryRect.top < containerRect.top || summaryRect.bottom > containerRect.bottom) {
+            summary.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+          }
+        }
+        if (nextOpen) fitAllText();
+      });
+    };
+
+    summary.addEventListener('click', toggleSection, { passive: false });
+    summary.addEventListener('keydown', toggleSection);
+  });
+
+  document.querySelectorAll('.control-panel details').forEach(details => {
+    const summary = details.querySelector(':scope > summary');
+    if (summary) summary.setAttribute('aria-expanded', String(details.open));
+    details.addEventListener('toggle', () => {
+      summary?.setAttribute('aria-expanded', String(details.open));
+    });
+  });
 }
 
 
@@ -1649,7 +1698,8 @@ function updateMobileHeaderMenuButton(collapsed) {
   if (!button) return;
   const source = collapsed ? 'メニューを開く' : 'メニューを閉じる';
   const translated = translatedUiText(source);
-  button.textContent = translated;
+  button.textContent = `${collapsed ? '☰' : '✕'} ${translated}`;
+  button.dataset.menuState = collapsed ? 'closed' : 'open';
   button.setAttribute('aria-label', translated);
   button.setAttribute('title', translated);
   button.setAttribute('aria-expanded', String(!collapsed));
@@ -2324,7 +2374,7 @@ function printResumeNow() {
     $$('.selected').forEach(element => element.classList.remove('selected'));
     fitAllText();
     applyTableLayout();
-    showToast('A3横・倍率100%で印刷してください。v2.8.6では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
+    showToast('A3横・倍率100%で印刷してください。v2.8.7では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
     if (typeof window.print !== 'function') throw new Error('このブラウザは印刷機能に対応していません。');
     window.print();
   } catch (error) {
@@ -2947,7 +2997,7 @@ async function registerServiceWorker() {
     }
     return;
   }
-  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.6'); } catch (error) { console.warn('Service worker registration failed', error); }
+  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.7'); } catch (error) { console.warn('Service worker registration failed', error); }
 }
 
 function init() {
@@ -2959,6 +3009,7 @@ function init() {
 
   ensureOfficialFooter();
   ensureMobileSummaryLabels();
+  bindImmediateMobileAccordion();
   loadStorage();
   bindEvents();
   resetUndo();
