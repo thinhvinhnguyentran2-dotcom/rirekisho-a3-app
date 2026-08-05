@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.7.5';
+const APP_VERSION = '2.8.1';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -25,6 +25,7 @@ const TEXT_RATIO_MAX = 95;
 const REQUEST_HEIGHT_MIN_MM = 12;
 const INFO_BOX_MIN_HEIGHT_MM = 12;
 const ZIPCLOUD_API_URL = 'https://zipcloud.ibsnet.co.jp/api/search';
+const INSTALL_DONE_KEY = 'rirekisho-a3-install-done';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -35,7 +36,7 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 function defaultDocument() {
   const id = makeId();
   return {
-    schemaVersion: 5,
+    schemaVersion: 8,
     id,
     title: '新しい履歴書',
     createdAt: new Date().toISOString(),
@@ -86,7 +87,7 @@ function defaultDocument() {
       textSectionRatio: 62,
       requestSectionHeight: 38,
       autoTextSectionRatio: true,
-      printMargins: { top: 19, bottom: 19, left: 18, right: 18, header: 8, footer: 8 }
+      printMargins: { top: 10, bottom: 10, left: 10, right: 10, header: 8, footer: 8 }
     }
   };
 }
@@ -251,7 +252,8 @@ function migrateDocument(input) {
   const source = deepClone(input || {});
   const doc = { ...base, ...source };
   doc.id = doc.id || makeId();
-  doc.schemaVersion = 7;
+  const previousSchemaVersion = Number(source.schemaVersion || 0);
+  doc.schemaVersion = 8;
   doc.postalAddressBase = String(doc.postalAddressBase || '');
   doc.postalKanaBase = String(doc.postalKanaBase || '');
   doc.motivationFont = clampNumber(doc.motivationFont, 75, 140, 100);
@@ -278,10 +280,10 @@ function migrateDocument(input) {
     requestSectionHeight: clampNumber(previousLayout.requestSectionHeight, REQUEST_HEIGHT_MIN_MM, 120, base.layout.requestSectionHeight),
     autoTextSectionRatio: previousLayout.autoTextSectionRatio !== false,
     printMargins: {
-      top: clampNumber(previousMargins.top, 0, 40, 19),
-      bottom: clampNumber(previousMargins.bottom, 0, 40, 19),
-      left: clampNumber(previousMargins.left, 0, 40, 18),
-      right: clampNumber(previousMargins.right, 0, 40, 18),
+      top: previousSchemaVersion < 8 ? 10 : clampNumber(previousMargins.top, 0, 40, 10),
+      bottom: previousSchemaVersion < 8 ? 10 : clampNumber(previousMargins.bottom, 0, 40, 10),
+      left: previousSchemaVersion < 8 ? 10 : clampNumber(previousMargins.left, 0, 40, 10),
+      right: previousSchemaVersion < 8 ? 10 : clampNumber(previousMargins.right, 0, 40, 10),
       header: clampNumber(previousMargins.header, 0, 30, 8),
       footer: clampNumber(previousMargins.footer, 0, 30, 8)
     }
@@ -632,10 +634,13 @@ function schedulePostalLookup(rawValue) {
 }
 
 function syncQuickEntryControls() {
+  setControlValue('#quickNameKanaInput', state.nameKana || '');
   setControlValue('#quickNameInput', state.name || '');
   setControlValue('#quickPhoneInput', state.phone || '');
   setControlValue('#quickEmailInput', state.email || '');
+  setControlValue('#quickContactKanaInput', state.contactKana || '');
   setControlValue('#quickContactAddressInput', state.contactAddress || '');
+  setControlValue('#quickContactPhoneInput', state.contactPhone || '');
   setControlValue('#quickMotivationInput', state.motivation || '');
   setControlValue('#quickRequestsInput', state.requests || '');
 }
@@ -1447,10 +1452,10 @@ function moveInfoBox(direction) {
 
 function applyPrintSettings() {
   const margins = state.layout.printMargins;
-  const top = clampNumber(margins.top, 0, 40, 19);
-  const bottom = clampNumber(margins.bottom, 0, 40, 19);
-  const left = clampNumber(margins.left, 0, 40, 18);
-  const right = clampNumber(margins.right, 0, 40, 18);
+  const top = clampNumber(margins.top, 0, 40, 10);
+  const bottom = clampNumber(margins.bottom, 0, 40, 10);
+  const left = clampNumber(margins.left, 0, 40, 10);
+  const right = clampNumber(margins.right, 0, 40, 10);
   const contentWidth = Math.max(300, A3_MM.width - left - right);
   const contentHeight = Math.max(210, A3_MM.height - top - bottom);
   document.documentElement.style.setProperty('--page-margin-top', `${top}mm`);
@@ -1467,7 +1472,7 @@ function applyPrintSettings() {
   }
   pageStyle.textContent = '@page { size: A3 landscape; margin: 0; }';
   const info = $('#printScaleInfo');
-  if (info) info.textContent = `A3用紙内：上${top} / 下${bottom} / 左${left} / 右${right} mm・本文領域 ${contentWidth.toFixed(1)} × ${contentHeight.toFixed(1)} mm・中央配置`;
+  if (info) info.textContent = `A3用紙内：上${top} / 下${bottom} / 左${left} / 右${right} mm・本文領域 ${contentWidth.toFixed(1)} × ${contentHeight.toFixed(1)} mm・中央折り安全余白あり`;
   requestAnimationFrame(() => { applyTableLayout(); applyPreviewScale(); });
 }
 
@@ -1943,7 +1948,7 @@ async function captureSheetCanvas(dpi) {
 
   const sourceWidth = Math.round(A3_MM.width * 96 / 25.4);
   const sourceHeight = Math.round(A3_MM.height * 96 / 25.4);
-  const scale = Math.max(1, dpi / 96);
+  const scale = Math.max(2, dpi / 96);
   const original = {
     transform: sheet.style.transform,
     transformOrigin: sheet.style.transformOrigin,
@@ -2021,7 +2026,8 @@ async function captureSheetCanvas(dpi) {
     });
 
     // ここで一度だけ読み出し可否を確認し、tainted canvas を後工程へ渡さない。
-    await canvasToBlob(canvas, 'image/jpeg', 0.82);
+    enhanceCanvasForSharpPrint(canvas);
+    await canvasToBlob(canvas, 'image/jpeg', 1.0);
     return canvas;
   } catch (error) {
     if (/taint|SecurityError|origin-clean/i.test(String(error?.message || error))) {
@@ -2035,6 +2041,35 @@ async function captureSheetCanvas(dpi) {
     sheet.style.boxShadow = original.boxShadow;
   }
 }
+
+function enhanceCanvasForSharpPrint(canvas) {
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) return canvas;
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    if (a === 0) continue;
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    if (lum >= 250) {
+      data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
+      continue;
+    }
+    if (lum <= 215) {
+      data[i] = 0; data[i + 1] = 0; data[i + 2] = 0;
+      continue;
+    }
+    const boosted = Math.max(0, Math.min(255, 255 - (255 - lum) * 2.15));
+    const v = Math.round(boosted);
+    data[i] = v; data[i + 1] = v; data[i + 2] = v;
+  }
+  context.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
 
 function loadImage(url, timeoutMs = 20000) {
   return withTimeout(new Promise((resolve, reject) => {
@@ -2108,7 +2143,7 @@ async function createPdfAtDpi(dpi) {
     `A3画像の作成がタイムアウトしました（${dpi} dpi）。`
   );
   setBusy(true, `PDF画像へ変換しています…（${dpi} dpi）`);
-  const jpeg = await canvasToBlob(canvas, 'image/jpeg', dpi >= 240 ? 0.9 : 0.86);
+  const jpeg = await canvasToBlob(canvas, 'image/jpeg', dpi >= 450 ? 1.0 : dpi >= 300 ? 0.99 : 0.97);
   setBusy(true, 'PDFファイルを仕上げています…');
   return withTimeout(
     jpegToA3Pdf(jpeg, canvas.width, canvas.height),
@@ -2120,14 +2155,14 @@ async function createPdfAtDpi(dpi) {
 
 
 async function createPdfBlob() {
-  const requestedDpi = Number($('#pdfQuality').value) || 120;
+  const requestedDpi = Number($('#pdfQuality').value) || 300;
   try {
     return await createPdfAtDpi(requestedDpi);
   } catch (firstError) {
-    console.warn('PDF generation retry at 96 dpi', firstError);
-    if (requestedDpi <= 96) throw firstError;
-    showToast('高画質で共有用PDFを作成できなかったため、96 dpiで自動再試行します。', 4500);
-    return createPdfAtDpi(96);
+    console.warn('PDF generation retry at 200 dpi', firstError);
+    if (requestedDpi <= 200) throw firstError;
+    showToast('最高画質で共有用PDFを作成できなかったため、200 dpiで自動再試行します。', 4500);
+    return createPdfAtDpi(200);
   }
 }
 
@@ -2139,7 +2174,8 @@ function printResumeNow() {
     selectedRow = null;
     $$('.selected').forEach(element => element.classList.remove('selected'));
     fitAllText();
-    showToast('スマートフォンでも印刷画面を開きます。用紙はA3・横向き・倍率100%を推奨します。', 6500);
+    applyTableLayout();
+    showToast('A3横・倍率100%で印刷してください。v2.8.1では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
     if (typeof window.print !== 'function') throw new Error('このブラウザは印刷機能に対応していません。');
     window.print();
   } catch (error) {
@@ -2294,10 +2330,13 @@ function bindEvents() {
   });
 
   const quickFieldMap = {
+    quickNameKanaInput: 'nameKana',
     quickNameInput: 'name',
     quickPhoneInput: 'phone',
     quickEmailInput: 'email',
+    quickContactKanaInput: 'contactKana',
     quickContactAddressInput: 'contactAddress',
+    quickContactPhoneInput: 'contactPhone',
     quickMotivationInput: 'motivation',
     quickRequestsInput: 'requests'
   };
@@ -2600,21 +2639,74 @@ function bindEvents() {
     if (window.matchMedia('(max-width: 980px)').matches) {
       if (!document.body.classList.contains('mobile-preview')) setMobileView('editor');
     } else document.body.classList.remove('mobile-editor', 'mobile-preview');
+    updateInstallPromotion();
   });
   window.addEventListener('beforeunload', () => persistDocuments(false));
 
   window.addEventListener('beforeinstallprompt', event => {
-    event.preventDefault(); deferredInstallPrompt = event; $('#installBtn').hidden = false;
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    updateInstallPromotion();
   });
-  $('#installBtn').addEventListener('click', async () => {
-    if (!deferredInstallPrompt) return showToast('ブラウザのメニューから「ホーム画面に追加」を選択してください。', 4000);
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
+  window.addEventListener('appinstalled', () => {
+    storage.setItem(INSTALL_DONE_KEY, '1');
     deferredInstallPrompt = null;
-    $('#installBtn').hidden = true;
+    updateInstallPromotion();
+    showToast('アプリをホーム画面に追加しました。次回からこの案内は表示されません。', 4200);
   });
+  $('#installBtn').addEventListener('click', handleInstallPrompt);
+  $('#mobileInstallBtn')?.addEventListener('click', handleInstallPrompt);
+  $('#mobileInstallGuideBtn')?.addEventListener('click', showInstallGuide);
 }
 
+
+
+function isStandaloneApp() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function updateInstallPromotion() {
+  const installBtn = $('#installBtn');
+  const mobileHelper = $('#mobileInstallHelper');
+  const mobileBtn = $('#mobileInstallBtn');
+  if (!installBtn) return;
+  const installed = isStandaloneApp() || storage.getItem(INSTALL_DONE_KEY) === '1';
+  const mobile = window.matchMedia('(max-width: 980px)').matches;
+  installBtn.hidden = installed || mobile || !deferredInstallPrompt;
+  if (mobileHelper) {
+    mobileHelper.hidden = installed || !mobile;
+  }
+  if (mobileBtn) {
+    mobileBtn.textContent = deferredInstallPrompt ? 'Cài đặt ứng dụng' : 'Mở hướng dẫn cài đặt';
+  }
+}
+
+async function handleInstallPrompt() {
+  if (isStandaloneApp()) {
+    storage.setItem(INSTALL_DONE_KEY, '1');
+    updateInstallPromotion();
+    return;
+  }
+  if (!deferredInstallPrompt) {
+    showInstallGuide();
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice.catch(() => null);
+  if (choice && choice.outcome === 'accepted') {
+    storage.setItem(INSTALL_DONE_KEY, '1');
+  }
+  deferredInstallPrompt = null;
+  updateInstallPromotion();
+}
+
+function showInstallGuide() {
+  showMessage('Cài đặt ứng dụng vào màn hình chính', `
+    <p><strong>Android / Chrome</strong>: bấm <em>Cài đặt ứng dụng</em> hoặc menu <em>⋮</em> → <em>Install app / Add to Home screen</em>.</p>
+    <p><strong>iPhone / iPad</strong>: bấm nút <em>Chia sẻ</em> của Safari → <em>Add to Home Screen</em>.</p>
+    <p>Sau khi đã cài xong, lần mở sau phần nhắc cài đặt sẽ tự động ẩn.</p>
+  `);
+}
 
 
 function ensureOfficialFooter() {
@@ -2658,7 +2750,7 @@ async function registerServiceWorker() {
     }
     return;
   }
-  try { await navigator.serviceWorker.register('./service-worker.js?v=2.5.7'); } catch (error) { console.warn('Service worker registration failed', error); }
+  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.1'); } catch (error) { console.warn('Service worker registration failed', error); }
 }
 
 function init() {
@@ -2674,6 +2766,7 @@ function init() {
   resetUndo();
   renderAll();
   setMobileView('editor');
+  updateInstallPromotion();
   registerServiceWorker();
   requestAnimationFrame(() => forceCloseBusyOverlay());
   setTimeout(() => { if (!pdfOperationActive) forceCloseBusyOverlay(); }, 800);

@@ -1,575 +1,544 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#111827" />
-  <meta name="description" content="A3横1枚・左右2面の日本式履歴書を作成、写真編集、PDF保存・共有、印刷できる無料PWA" />
-  <meta name="robots" content="index,follow" />
-  <title>履歴書 A3 作成アプリ</title>
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=2.7.5" />
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta content="#111827" name="theme-color"/>
+<meta content="A3横1枚・左右2面の日本式履歴書を作成、写真編集、PDF保存・共有、印刷できる無料PWA" name="description"/>
+<meta content="index,follow" name="robots"/>
+<title>履歴書 A3 作成アプリ</title>
+<link href="./manifest.json" rel="manifest"/>
+<link href="./icons/icon.svg" rel="icon" type="image/svg+xml"/>
+<link href="./icons/icon-192.png" rel="apple-touch-icon"/>
+<link href="./styles.css?v=2.8.1" rel="stylesheet"/>
 </head>
 <body>
-  <header class="app-header no-print">
-    <div class="brand-block">
-      <div class="brand-icon" aria-hidden="true">履</div>
-      <div>
-        <h1>履歴書 A3 作成アプリ</h1>
-        <p>A3横1枚・写真編集・和暦/西暦・PDF保存/共有・オフライン対応 <strong>v2.7.5</strong></p>
-      </div>
-    </div>
-    <div class="header-actions">
-      <div class="header-secondary header-secondary-start">
-        <label class="language-picker" data-i18n-skip>
-          <span class="language-icon" aria-hidden="true">🌐</span>
-          <select id="uiLanguage" aria-label="表示言語">
-            <option value="vi">Tiếng Việt</option>
-            <option value="ja">日本語</option>
-            <option value="en">English</option>
-            <option value="ne">नेपाली</option>
-          </select>
-        </label>
-        <span id="operationStatus" class="operation-status" hidden></span>
-        <button id="undoBtn" type="button" title="元に戻す" disabled>↶</button>
-        <button id="redoBtn" type="button" title="やり直す" disabled>↷</button>
-      </div>
-      <div class="essential-actions" aria-label="主要操作">
-        <button id="saveBtn" type="button">保存</button>
-        <button id="pdfBtn" class="primary" type="button">PDF保存</button>
-        <button id="shareBtn" type="button">PDF共有</button>
-        <button id="printBtn" type="button">印刷</button>
-      </div>
-      <div class="header-secondary header-secondary-end">
-        <button id="installBtn" type="button" hidden>アプリをインストール</button>
-      </div>
-    </div>
-    <div class="mobile-switch mobile-only" aria-label="表示切替">
-      <button id="mobileEditViewBtn" type="button" class="active">入力</button>
-      <button id="mobilePreviewViewBtn" type="button">プレビュー</button>
-    </div>
-  </header>
-
-  <main class="workspace">
-    <aside class="control-panel no-print" aria-label="編集パネル">
-      <section class="status-card">
-        <div>
-          <strong id="saveStatus">未保存</strong>
-          <span id="updatedAt"></span>
-        </div>
-        <span class="privacy-badge">端末内保存</span>
-      </section>
-
-      <details open>
-        <summary>書類管理</summary>
-        <div class="details-body">
-          <label>書類名
-            <input id="documentTitle" type="text" maxlength="80" placeholder="例：株式会社〇〇応募用" />
-          </label>
-          <label>保存済み書類
-            <select id="documentSelect"></select>
-          </label>
-          <div class="button-grid two">
-            <button id="newBtn" type="button">新規</button>
-            <button id="loadBtn" type="button">開く</button>
-            <button id="duplicateBtn" type="button">複製</button>
-            <button id="deleteDocumentBtn" class="danger" type="button">削除</button>
-          </div>
-        </div>
-      </details>
-
-      <details open>
-        <summary>日付・表示</summary>
-        <div class="details-body">
-          <label>作成日
-            <input id="asOfDate" type="date" />
-          </label>
-          <label>生年月日
-            <input id="birthDate" type="date" />
-          </label>
-          <fieldset>
-            <legend>年の表示</legend>
-            <div class="segmented" id="yearModeGroup">
-              <button type="button" data-year-mode="western">西暦</button>
-              <button type="button" data-year-mode="japanese">和暦</button>
-            </div>
-          </fieldset>
-          <label>性別
-            <select id="genderSelect">
-              <option value="男">男</option>
-              <option value="女">女</option>
-              <option value="">未記入</option>
-            </select>
-          </label>
-        </div>
-      </details>
-
-      <details open>
-        <summary>住所・郵便番号自動入力</summary>
-        <div class="details-body">
-          <label>郵便番号
-            <div class="postal-lookup-row">
-              <input id="postalLookupInput" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="8" placeholder="例：653-0834" />
-              <button id="postalLookupBtn" type="button">住所検索</button>
-            </div>
-          </label>
-          <p id="postalLookupStatus" class="lookup-status" aria-live="polite">7桁を入力すると住所を自動検索します。</p>
-          <label id="postalResultWrap" hidden>候補を選択
-            <select id="postalResultSelect"></select>
-          </label>
-          <label>住所（漢字）
-            <textarea id="addressKanjiInput" rows="3" placeholder="都道府県・市区町村・町域が自動入力されます。番地・建物名を追記してください。"></textarea>
-          </label>
-          <label>ふりがな（ひらがな）
-            <textarea id="addressKanaInput" rows="3" placeholder="住所のよみがなが自動入力されます。"></textarea>
-          </label>
-          <div class="button-grid two compact-gap">
-            <button id="reapplyPostalResultBtn" type="button" disabled>選択候補を再反映</button>
-            <button id="clearAddressBtn" type="button">住所をクリア</button>
-          </div>
-          <p class="hint">検索時に送信するのは郵便番号だけです。インターネット未接続時は手入力できます。</p>
-        </div>
-      </details>
-
-      <details open>
-        <summary>証明写真</summary>
-        <div class="details-body">
-          <label class="file-button">写真を選択
-            <input id="photoInput" type="file" accept="image/*" hidden />
-          </label>
-          <button id="selectedPhotoCard" class="selected-photo-card" type="button" hidden>
-            <img id="selectedPhotoThumb" alt="選択済みの証明写真" />
-            <span><strong>選択済み写真</strong><small>タップして写真を調整</small></span>
-          </button>
-          <div class="button-grid two">
-            <button id="editPhotoBtn" type="button" disabled>写真を調整</button>
-            <button id="removePhotoBtn" type="button" disabled>写真を削除</button>
-          </div>
-          <p class="hint">ドラッグ、拡大・縮小、回転、位置調整後に履歴書用サイズへ切り抜けます。</p>
-        </div>
-      </details>
-
-      <details open>
-        <summary>志望動機・本人希望</summary>
-        <div class="details-body">
-          <div class="fixed-label-note">
-            <strong>固定見出し</strong>
-            <span>志望の動機、特技、好きな学科、アピールポイントなど</span>
-          </div>
-          <label>本文
-            <textarea id="motivationInput" rows="7" placeholder="志望の動機、特技、好きな学科、アピールポイントなどを入力"></textarea>
-          </label>
-          <label>文字サイズ <span id="motivationFontValue">100%</span>
-            <input id="motivationFontSize" type="range" min="75" max="140" step="5" value="100" />
-          </label>
-
-          <div class="fixed-label-note spaced">
-            <strong>固定見出し</strong>
-            <span>本人希望記入欄（特に給料・職種・勤務時間・勤務地・その他についての希望などがあれば記入）</span>
-          </div>
-          <label>本文
-            <textarea id="requestsInput" rows="5" placeholder="本人希望記入欄を入力"></textarea>
-          </label>
-          <div class="button-grid two compact-gap">
-            <button id="applyCompanyRuleBtn" type="button">貴社の規定に従う</button>
-            <button id="clearRequestsBtn" type="button">本文をクリア</button>
-          </div>
-          <label>文字サイズ <span id="requestsFontValue">100%</span>
-            <input id="requestsFontSize" type="range" min="75" max="140" step="5" value="100" />
-          </label>
-          <label>上下欄の高さ配分 <span id="textSectionRatioValue">上段 62% / 下段 38%</span>
-            <input id="textSectionRatio" type="range" min="5" max="95" step="1" value="62" />
-          </label>
-          <label class="checkbox-row"><input id="autoTextSectionRatio" type="checkbox" checked /> 行数に合わせて高さ配分を自動調整</label>
-          <label>本人希望欄の高さ <span id="requestSectionHeightValue">38 mm</span>
-            <input id="requestSectionHeight" type="range" min="12" max="120" step="1" value="38" />
-          </label>
-          <p class="hint">本人希望欄は直接高さを調整できます。上段と下段はA3の範囲内で連動し、下端のborderが切れないように自動制限します。</p>
-        </div>
-      </details>
-
-      <details open>
-        <summary>表の行数・学歴職歴・資格</summary>
-        <div class="details-body">
-          <div class="form-grid two">
-            <label>学歴・職歴の合計行数
-              <input id="historyTotalSlots" type="number" min="10" max="30" step="1" />
-            </label>
-            <label>資格の行数
-              <input id="licenseSlots" type="number" min="3" max="10" step="1" />
-            </label>
-          </div>
-          <div class="form-grid two">
-            <label>左側の行数
-              <input id="historyLeftSlots" type="number" min="6" max="18" step="1" />
-            </label>
-            <label>右側の行数
-              <input id="historyRightSlots" type="number" min="4" max="12" step="1" />
-            </label>
-          </div>
-          <div id="historySplitLiveInfo" class="layout-metric">現在の配分：左 17 行 ＋ 右 11 行 ＝ 合計 28 行</div>
-          <p class="hint">履歴書全体のバランスを優先し、左側を十分に確保してから右側へ続けて表示します。資格欄と通勤時間・扶養家族数の固定2枠は、崩れない標準サイズを維持します。</p>
-          <div id="sharedRowHeightInfo" class="layout-metric"></div>
-
-          <div class="subsection-title">学歴・職歴の選択行を入力</div>
-          <label>編集する行
+<header class="app-header no-print">
+<div class="brand-block">
+<div aria-hidden="true" class="brand-icon">履</div>
+<div>
+<h1>履歴書 A3 作成アプリ</h1>
+<p>A3横1枚・写真編集・和暦/西暦・PDF保存/共有・オフライン対応 <strong>v2.8.1</strong></p>
+</div>
+</div>
+<div class="header-actions">
+<div class="header-secondary header-secondary-start">
+<label class="language-picker" data-i18n-skip="">
+<span aria-hidden="true" class="language-icon">🌐</span>
+<select aria-label="表示言語" id="uiLanguage">
+<option value="vi">Tiếng Việt</option>
+<option value="ja">日本語</option>
+<option value="en">English</option>
+<option value="ne">नेपाली</option>
+</select>
+</label>
+<span class="operation-status" hidden="" id="operationStatus"></span>
+<button disabled="" id="undoBtn" title="元に戻す" type="button">↶</button>
+<button disabled="" id="redoBtn" title="やり直す" type="button">↷</button>
+</div>
+<div aria-label="主要操作" class="essential-actions">
+<button id="saveBtn" type="button">保存</button>
+<button class="primary" id="pdfBtn" type="button">PDF保存</button>
+<button id="shareBtn" type="button">PDF共有</button>
+<button id="printBtn" type="button">印刷</button>
+</div>
+<div class="header-secondary header-secondary-end">
+<button hidden="" id="installBtn" type="button">アプリをインストール</button>
+</div>
+</div>
+<div class="mobile-install-helper mobile-only" hidden="" id="mobileInstallHelper">
+<div class="mobile-install-copy">
+<strong>Thêm ứng dụng vào màn hình chính</strong>
+<span id="mobileInstallHint">Cài một lần để lần sau mở nhanh như app. Sau khi đã cài, phần nhắc này sẽ tự ẩn.</span>
+</div>
+<div class="mobile-install-actions">
+<button id="mobileInstallBtn" type="button">Cài đặt ứng dụng</button>
+<button class="secondary" id="mobileInstallGuideBtn" type="button">Hướng dẫn</button>
+</div>
+</div>
+<div aria-label="表示切替" class="mobile-switch mobile-only">
+<button class="active" id="mobileEditViewBtn" type="button">入力</button>
+<button id="mobilePreviewViewBtn" type="button">プレビュー</button>
+</div>
+</header>
+<main class="workspace">
+<aside aria-label="編集パネル" class="control-panel no-print"><section class="status-card">
+<div>
+<strong id="saveStatus">未保存</strong>
+<span id="updatedAt"></span>
+</div>
+<span class="privacy-badge">端末内保存</span>
+</section><details class="input-step input-step-personal" id="personalDetails" open="">
+<summary>1．個人情報・連絡先</summary>
+<div class="details-body">
+<p class="hint input-order-hint">最初に氏名・生年月日・電話番号・メール・写真など、本人情報を上から順番に入力してください。</p>
+<label>氏名（ふりがな）
+      <input autocomplete="name" id="quickNameKanaInput" maxlength="120" placeholder="例：とらん ぐえん あん" type="text"/>
+</label>
+<label>氏名（漢字・ローマ字）
+      <input autocomplete="name" id="quickNameInput" maxlength="120" placeholder="例：TRAN NGUYEN AN" type="text"/>
+</label>
+<div class="form-grid two">
+<label>作成日
+        <input id="asOfDate" type="date"/>
+</label>
+<label>生年月日
+        <input id="birthDate" type="date"/>
+</label>
+</div>
+<fieldset>
+<legend>年の表示</legend>
+<div class="segmented" id="yearModeGroup">
+<button data-year-mode="western" type="button">西暦</button>
+<button data-year-mode="japanese" type="button">和暦</button>
+</div>
+</fieldset>
+<label>性別
+      <select id="genderSelect">
+<option value="男">男</option>
+<option value="女">女</option>
+<option value="">未記入</option>
+</select>
+</label>
+<div class="form-grid two">
+<label>電話番号
+        <input autocomplete="tel" id="quickPhoneInput" maxlength="40" placeholder="例：090-0000-0000" type="tel"/>
+</label>
+<label>メールアドレス
+        <input autocomplete="email" id="quickEmailInput" maxlength="160" placeholder="例：example@email.com" type="email"/>
+</label>
+</div>
+<div class="subsection-title">証明写真</div>
+<label class="file-button">写真を選択
+      <input accept="image/*" hidden="" id="photoInput" type="file"/>
+</label>
+<button class="selected-photo-card" hidden="" id="selectedPhotoCard" type="button">
+<img alt="選択済みの証明写真" id="selectedPhotoThumb"/>
+<span><strong>選択済み写真</strong><small>タップして写真を調整</small></span>
+</button>
+<div class="button-grid two">
+<button disabled="" id="editPhotoBtn" type="button">写真を調整</button>
+<button disabled="" id="removePhotoBtn" type="button">写真を削除</button>
+</div>
+<p class="hint">ドラッグ、拡大・縮小、回転、位置調整後に履歴書用サイズへ切り抜けます。</p>
+</div>
+</details><details class="input-step input-step-address" id="addressDetails" open="">
+<summary>2．住所・別の連絡先</summary>
+<div class="details-body">
+<p class="hint input-order-hint">現住所を入力し、現住所以外への連絡を希望する場合は別の連絡先も入力してください。</p>
+<label>郵便番号
+      <div class="postal-lookup-row">
+<input autocomplete="postal-code" id="postalLookupInput" inputmode="numeric" maxlength="8" placeholder="例：653-0834" type="text"/>
+<button id="postalLookupBtn" type="button">住所検索</button>
+</div>
+</label>
+<p aria-live="polite" class="lookup-status" id="postalLookupStatus">7桁を入力すると住所を自動検索します。</p>
+<label hidden="" id="postalResultWrap">候補を選択
+      <select id="postalResultSelect"></select>
+</label>
+<label>現住所（漢字）
+      <textarea id="addressKanjiInput" placeholder="都道府県・市区町村・町域が自動入力されます。番地・建物名を追記してください。" rows="3"></textarea>
+</label>
+<label>現住所ふりがな（ひらがな）
+      <textarea id="addressKanaInput" placeholder="住所のよみがなが自動入力されます。" rows="3"></textarea>
+</label>
+<div class="button-grid two compact-gap">
+<button disabled="" id="reapplyPostalResultBtn" type="button">選択候補を再反映</button>
+<button id="clearAddressBtn" type="button">住所をクリア</button>
+</div>
+<p class="hint">検索時に送信するのは郵便番号だけです。インターネット未接続時は手入力できます。</p>
+<div class="subsection-title">別の連絡先（必要な場合のみ）</div>
+<label>連絡先ふりがな
+      <textarea id="quickContactKanaInput" placeholder="連絡先住所のふりがな" rows="2"></textarea>
+</label>
+<label>連絡先住所
+      <textarea id="quickContactAddressInput" placeholder="現住所以外に連絡を希望する場合のみ入力" rows="3"></textarea>
+</label>
+<label>連絡先電話番号
+      <input autocomplete="tel" id="quickContactPhoneInput" maxlength="40" placeholder="例：078-000-0000" type="tel"/>
+</label>
+</div>
+</details><details class="input-step-history input-step" id="historyDetails" open="">
+<summary>3．学歴・職歴・資格</summary>
+<div class="details-body">
+<div class="form-grid two">
+<label>学歴・職歴の合計行数
+              <input id="historyTotalSlots" max="30" min="10" step="1" type="number"/>
+</label>
+<label>資格の行数
+              <input id="licenseSlots" max="10" min="3" step="1" type="number"/>
+</label>
+</div>
+<div class="form-grid two">
+<label>左側の行数
+              <input id="historyLeftSlots" max="18" min="6" step="1" type="number"/>
+</label>
+<label>右側の行数
+              <input id="historyRightSlots" max="12" min="4" step="1" type="number"/>
+</label>
+</div>
+<div class="layout-metric" id="historySplitLiveInfo">現在の配分：左 17 行 ＋ 右 11 行 ＝ 合計 28 行</div>
+<p class="hint">履歴書全体のバランスを優先し、左側を十分に確保してから右側へ続けて表示します。資格欄と通勤時間・扶養家族数の固定2枠は、崩れない標準サイズを維持します。</p>
+<div class="layout-metric" id="sharedRowHeightInfo"></div>
+<div class="subsection-title">学歴・職歴の選択行を入力</div>
+<label>編集する行
             <select id="historyRowSelect"></select>
-          </label>
-          <div class="form-grid year-month-text">
-            <label>年<input id="historyEditorYear" type="text" inputmode="numeric" maxlength="8" /></label>
-            <label>月<input id="historyEditorMonth" type="text" inputmode="numeric" maxlength="2" /></label>
-            <label>内容<input id="historyEditorText" type="text" maxlength="160" /></label>
-          </div>
-          <div class="form-grid action-row">
-            <label>定型語
+</label>
+<div class="form-grid year-month-text">
+<label>年<input id="historyEditorYear" inputmode="numeric" maxlength="8" type="text"/></label>
+<label>月<input id="historyEditorMonth" inputmode="numeric" maxlength="2" type="text"/></label>
+<label>内容<input id="historyEditorText" maxlength="160" type="text"/></label>
+</div>
+<div class="form-grid action-row">
+<label>定型語
               <select id="historyActionSelect">
-                <option value="">選択してください</option>
-                <optgroup label="学歴">
-                  <option>入学</option><option>卒業</option><option>修了</option><option>中途退学</option><option>在学中</option>
-                </optgroup>
-                <optgroup label="職歴">
-                  <option>入社</option><option>退社</option><option>途中退社</option><option>現在に至る</option><option>異動</option><option>配属</option><option>就任</option><option>退任</option>
-                </optgroup>
-                <optgroup label="その他">
-                  <option>取得</option><option>合格</option><option>更新</option><option>以上</option>
-                </optgroup>
-              </select>
-            </label>
-            <button id="appendHistoryActionBtn" type="button">選択行へ追加</button>
-          </div>
-
-          <div class="subsection-title">資格・免許の選択行を入力</div>
-          <label>編集する行
+<option value="">選択してください</option>
+<optgroup label="学歴">
+<option>入学</option><option>卒業</option><option>修了</option><option>中途退学</option><option>在学中</option>
+</optgroup>
+<optgroup label="職歴">
+<option>入社</option><option>退社</option><option>途中退社</option><option>現在に至る</option><option>異動</option><option>配属</option><option>就任</option><option>退任</option>
+</optgroup>
+<optgroup label="その他">
+<option>取得</option><option>合格</option><option>更新</option><option>以上</option>
+</optgroup>
+</select>
+</label>
+<button id="appendHistoryActionBtn" type="button">選択行へ追加</button>
+</div>
+<div class="subsection-title">資格・免許の選択行を入力</div>
+<label>編集する行
             <select id="licenseRowSelect"></select>
-          </label>
-          <div class="form-grid year-month-text">
-            <label>年<input id="licenseEditorYear" type="text" inputmode="numeric" maxlength="8" /></label>
-            <label>月<input id="licenseEditorMonth" type="text" inputmode="numeric" maxlength="2" /></label>
-            <label>内容<input id="licenseEditorText" type="text" maxlength="160" /></label>
-          </div>
-
-          <div class="button-grid two">
-            <button id="addEducationBtn" type="button">学歴を追加</button>
-            <button id="addWorkBtn" type="button">職歴を追加</button>
-            <button id="addHistorySectionBtn" type="button">見出しを追加</button>
-            <button id="addLicenseBtn" type="button">資格を追加</button>
-            <button id="moveUpBtn" type="button">上へ</button>
-            <button id="moveDownBtn" type="button">下へ</button>
-            <button id="duplicateRowBtn" type="button">行を複製</button>
-            <button id="deleteRowBtn" class="danger" type="button">行を削除</button>
-          </div>
-          <div id="rowCountInfo" class="row-count-info"></div>
-        </div>
-      </details>
-
-      <details open id="quickEntryDetails">
-        <summary>学歴・職歴の後に入力する情報</summary>
-        <div class="details-body quick-entry-body">
-          <p class="hint">スマートフォンで学歴・職歴の入力を終えたあと、そのまま基本情報と応募内容を続けて入力できます。</p>
-          <label>氏名
-            <input id="quickNameInput" type="text" maxlength="120" autocomplete="name" placeholder="例：TRAN NGUYEN AN" />
-          </label>
-          <div class="form-grid two">
-            <label>電話番号
-              <input id="quickPhoneInput" type="tel" maxlength="40" autocomplete="tel" placeholder="例：090-0000-0000" />
-            </label>
-            <label>メールアドレス
-              <input id="quickEmailInput" type="email" maxlength="160" autocomplete="email" placeholder="例：example@email.com" />
-            </label>
-          </div>
-          <label>連絡先住所
-            <textarea id="quickContactAddressInput" rows="3" placeholder="現住所以外に連絡を希望する場合のみ入力"></textarea>
-          </label>
-          <label>志望動機
-            <textarea id="quickMotivationInput" rows="6" placeholder="志望の動機、特技、好きな学科、アピールポイントなどを入力"></textarea>
-          </label>
-          <label>本人希望・その他の希望
-            <textarea id="quickRequestsInput" rows="4" placeholder="給料・職種・勤務時間・勤務地などの希望を入力"></textarea>
-          </label>
-        </div>
-      </details>
-
-      <details open>
-        <summary>固定項目・追加テーブル</summary>
-        <div class="details-body">
-          <div class="subsection-title">固定項目（ラベルは変更しません）</div>
-          <label>通勤時間
-            <input id="commuteValueInput" type="text" maxlength="80" placeholder="例：約 30 分" />
-          </label>
-          <label>扶養家族数（配偶者を除く）
-            <input id="dependentsValueInput" type="text" maxlength="80" placeholder="例：1 人" />
-          </label>
-
-          <div class="subsection-title">新しいテーブルを追加</div>
-          <label>編集する追加テーブル
+</label>
+<div class="form-grid year-month-text">
+<label>年<input id="licenseEditorYear" inputmode="numeric" maxlength="8" type="text"/></label>
+<label>月<input id="licenseEditorMonth" inputmode="numeric" maxlength="2" type="text"/></label>
+<label>内容<input id="licenseEditorText" maxlength="160" type="text"/></label>
+</div>
+<div class="button-grid two">
+<button id="addEducationBtn" type="button">学歴を追加</button>
+<button id="addWorkBtn" type="button">職歴を追加</button>
+<button id="addHistorySectionBtn" type="button">見出しを追加</button>
+<button id="addLicenseBtn" type="button">資格を追加</button>
+<button id="moveUpBtn" type="button">上へ</button>
+<button id="moveDownBtn" type="button">下へ</button>
+<button id="duplicateRowBtn" type="button">行を複製</button>
+<button class="danger" id="deleteRowBtn" type="button">行を削除</button>
+</div>
+<div class="row-count-info" id="rowCountInfo"></div>
+</div>
+</details><details class="input-step-motivation input-step" id="motivationDetails" open="">
+<summary>4．志望動機・本人希望</summary>
+<div class="details-body">
+<div class="fixed-label-note">
+<strong>固定見出し</strong>
+<span>志望の動機、特技、好きな学科、アピールポイントなど</span>
+</div>
+<label>本文
+            <textarea id="motivationInput" placeholder="志望の動機、特技、好きな学科、アピールポイントなどを入力" rows="7"></textarea>
+</label>
+<label>文字サイズ <span id="motivationFontValue">100%</span>
+<input id="motivationFontSize" max="140" min="75" step="5" type="range" value="100"/>
+</label>
+<div class="fixed-label-note spaced">
+<strong>固定見出し</strong>
+<span>本人希望記入欄（特に給料・職種・勤務時間・勤務地・その他についての希望などがあれば記入）</span>
+</div>
+<label>本文
+            <textarea id="requestsInput" placeholder="本人希望記入欄を入力" rows="5"></textarea>
+</label>
+<div class="button-grid two compact-gap">
+<button id="applyCompanyRuleBtn" type="button">貴社の規定に従う</button>
+<button id="clearRequestsBtn" type="button">本文をクリア</button>
+</div>
+<label>文字サイズ <span id="requestsFontValue">100%</span>
+<input id="requestsFontSize" max="140" min="75" step="5" type="range" value="100"/>
+</label>
+<label>上下欄の高さ配分 <span id="textSectionRatioValue">上段 62% / 下段 38%</span>
+<input id="textSectionRatio" max="95" min="5" step="1" type="range" value="62"/>
+</label>
+<label class="checkbox-row"><input checked="" id="autoTextSectionRatio" type="checkbox"/> 行数に合わせて高さ配分を自動調整</label>
+<label>本人希望欄の高さ <span id="requestSectionHeightValue">38 mm</span>
+<input id="requestSectionHeight" max="120" min="12" step="1" type="range" value="38"/>
+</label>
+<p class="hint">本人希望欄は直接高さを調整できます。上段と下段はA3の範囲内で連動し、下端のborderが切れないように自動制限します。</p>
+</div>
+</details><details class="input-step-fixed input-step" id="fixedInfoDetails" open="">
+<summary>5．通勤時間・扶養家族・追加項目</summary>
+<div class="details-body">
+<div class="subsection-title">固定項目（ラベルは変更しません）</div>
+<label>通勤時間
+            <input id="commuteValueInput" maxlength="80" placeholder="例：約 30 分" type="text"/>
+</label>
+<label>扶養家族数（配偶者を除く）
+            <input id="dependentsValueInput" maxlength="80" placeholder="例：1 人" type="text"/>
+</label>
+<div class="subsection-title">新しいテーブルを追加</div>
+<label>編集する追加テーブル
             <select id="infoBoxSelect"></select>
-          </label>
-          <label>ラベルの候補
+</label>
+<label>ラベルの候補
             <select id="infoLabelPreset">
-              <option value="">自由入力</option>
-              <option>その他のスキル</option>
-              <option>希望職種</option>
-              <option>希望勤務地</option>
-              <option>勤務可能時間</option>
-              <option>配偶者</option>
-              <option>配偶者の扶養義務</option>
-              <option>資格補足</option>
-            </select>
-          </label>
-          <label>新しいラベル名
-            <input id="infoLabelInput" type="text" maxlength="60" placeholder="例：その他のスキル" />
-          </label>
-          <label>表示する内容
-            <textarea id="infoValueInput" rows="3" maxlength="180" placeholder="例：Excel、簿記、接客経験"></textarea>
-          </label>
-          <div class="button-grid two">
-            <button id="addInfoBoxBtn" type="button">新しいテーブルを追加</button>
-            <button id="deleteInfoBoxBtn" class="danger" type="button">追加テーブルを削除</button>
-            <button id="moveInfoBoxUpBtn" type="button">上へ</button>
-            <button id="moveInfoBoxDownBtn" type="button">下へ</button>
-          </div>
-          <p class="hint">「通勤時間」と「扶養家族数」は固定したまま、最大3個まで新しい表を追加できます。</p>
-        </div>
-      </details>
-
-      <details open>
-        <summary>表示・印刷・PDF設定</summary>
-        <div class="details-body">
-          <label>プレビュー倍率 <span id="previewZoomLabel">自動</span>
-            <input id="previewZoom" type="range" min="25" max="100" step="5" value="55" />
-          </label>
-          <label class="check-row">
-            <input id="autoZoom" type="checkbox" checked />
+<option value="">自由入力</option>
+<option>その他のスキル</option>
+<option>希望職種</option>
+<option>希望勤務地</option>
+<option>勤務可能時間</option>
+<option>配偶者</option>
+<option>配偶者の扶養義務</option>
+<option>資格補足</option>
+</select>
+</label>
+<label>新しいラベル名
+            <input id="infoLabelInput" maxlength="60" placeholder="例：その他のスキル" type="text"/>
+</label>
+<label>表示する内容
+            <textarea id="infoValueInput" maxlength="180" placeholder="例：Excel、簿記、接客経験" rows="3"></textarea>
+</label>
+<div class="button-grid two">
+<button id="addInfoBoxBtn" type="button">新しいテーブルを追加</button>
+<button class="danger" id="deleteInfoBoxBtn" type="button">追加テーブルを削除</button>
+<button id="moveInfoBoxUpBtn" type="button">上へ</button>
+<button id="moveInfoBoxDownBtn" type="button">下へ</button>
+</div>
+<p class="hint">「通勤時間」と「扶養家族数」は固定したまま、最大3個まで新しい表を追加できます。</p>
+</div>
+</details><details open="">
+<summary>書類管理</summary>
+<div class="details-body">
+<label>書類名
+            <input id="documentTitle" maxlength="80" placeholder="例：株式会社〇〇応募用" type="text"/>
+</label>
+<label>保存済み書類
+            <select id="documentSelect"></select>
+</label>
+<div class="button-grid two">
+<button id="newBtn" type="button">新規</button>
+<button id="loadBtn" type="button">開く</button>
+<button id="duplicateBtn" type="button">複製</button>
+<button class="danger" id="deleteDocumentBtn" type="button">削除</button>
+</div>
+</div>
+</details><details open="">
+<summary>表示・印刷・PDF設定</summary>
+<div class="details-body">
+<label>プレビュー倍率 <span id="previewZoomLabel">自動</span>
+<input id="previewZoom" max="100" min="25" step="5" type="range" value="55"/>
+</label>
+<label class="check-row">
+<input checked="" id="autoZoom" type="checkbox"/>
             A3全体を画面内に自動調整
           </label>
-          <div class="subsection-title">A3印刷余白（指定値を初期設定）</div>
-          <div class="form-grid two">
-            <label>上 mm<input id="printMarginTop" type="number" min="0" max="40" step="0.1" value="19" /></label>
-            <label>下 mm<input id="printMarginBottom" type="number" min="0" max="40" step="0.1" value="19" /></label>
-            <label>左 mm<input id="printMarginLeft" type="number" min="0" max="40" step="0.1" value="18" /></label>
-            <label>右 mm<input id="printMarginRight" type="number" min="0" max="40" step="0.1" value="18" /></label>
-            <label>ヘッダー mm<input id="printHeader" type="number" min="0" max="30" step="0.1" value="8" /></label>
-            <label>フッター mm<input id="printFooter" type="number" min="0" max="30" step="0.1" value="8" /></label>
-          </div>
-          <div id="printScaleInfo" class="layout-metric"></div>
-          <label>共有用PDF画質
+<div class="subsection-title">A3印刷余白（指定値を初期設定）</div>
+<div class="form-grid two">
+<label>上 mm<input id="printMarginTop" max="40" min="0" step="0.1" type="number" value="10"/></label>
+<label>下 mm<input id="printMarginBottom" max="40" min="0" step="0.1" type="number" value="10"/></label>
+<label>左 mm<input id="printMarginLeft" max="40" min="0" step="0.1" type="number" value="10"/></label>
+<label>右 mm<input id="printMarginRight" max="40" min="0" step="0.1" type="number" value="10"/></label>
+<label>ヘッダー mm<input id="printHeader" max="30" min="0" step="0.1" type="number" value="8"/></label>
+<label>フッター mm<input id="printFooter" max="30" min="0" step="0.1" type="number" value="8"/></label>
+</div>
+<div class="layout-metric" id="printScaleInfo"></div>
+<label>共有用PDF画質
             <select id="pdfQuality">
-              <option value="96">高速（96 dpi）</option>
-              <option value="120" selected>標準・推奨（120 dpi）</option>
-              <option value="150">高画質（150 dpi）</option>
-            </select>
-          </label>
-          <p class="hint">印刷時は A3・横向き・倍率100%・余白なしを選び、ブラウザの「ヘッダーとフッター」はオフにしてください。アプリ内で上19mm・下19mm・左18mm・右18mmへ正確に配置します。</p>
-          <button id="validateBtn" type="button">入力内容を確認</button>
-        </div>
-      </details>
-      <details>
-        <summary>PDF共有</summary>
-        <div class="details-body">
-          <p class="hint">PDFはクラウドへアップロードしません。端末へ保存したあと、対応するスマートフォンやパソコンではPDFファイルをそのまま共有します。</p>
-          <p class="hint">共有機能に未対応の場合は、Downloadsまたはファイルアプリに保存されたPDFを手動で添付してください。</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>バックアップ</summary>
-        <div class="details-body">
-          <div class="button-grid one">
-            <button id="exportBtn" type="button">JSONを書き出す</button>
-            <label class="file-button">JSONを読み込む
-              <input id="importInput" type="file" accept="application/json,.json" hidden />
-            </label>
-            <button id="clearAllBtn" class="danger ghost" type="button">端末内の全書類を削除</button>
-          </div>
-        </div>
-      </details>
-
-      <section class="help-card">
-        <h2>印刷設定</h2>
-        <p>A3・横向き・倍率100%・余白なし・ヘッダーとフッターなしを選択してください。用紙内の余白はアプリが管理します。</p>
-        <div class="policy-links">
-          <a href="./privacy.html" target="_blank" rel="noopener">プライバシー</a>
-          <a href="./terms.html" target="_blank" rel="noopener">利用上の注意</a>
-        </div>
-      </section>
-    </aside>
-
-    <section class="preview-shell" aria-label="A3履歴書プレビュー">
-      <div class="preview-toolbar no-print">
-        <span>A3 横 420 × 297 mm</span>
-        <span id="pageFitStatus">左右2面を1枚に自動調整</span>
-      </div>
-      <div id="scaleStage" class="scale-stage">
-        <div id="pageCanvas" class="a3-page-canvas">
-          <article id="resumeSheet" class="resume-sheet" aria-label="履歴書 A3">
-          <section class="sheet-half left-half">
-            <div class="title-row">
-              <h2>履 歴 書</h2>
-              <div id="asOfText" class="as-of"></div>
-            </div>
-
-            <section class="identity-area">
-              <div class="identity-table">
-                <div class="field-row kana-row">
-                  <span class="field-label">ふりがな</span>
-                  <div class="editable fit-text name-kana-value" data-field="nameKana" data-placeholder="チャン グエン アン" contenteditable="true"></div>
-                </div>
-                <div class="field-row name-row">
-                  <span class="field-label">氏　　名</span>
-                  <div class="editable name-value fit-text" data-field="name" data-placeholder="TRAN NGUYEN AN" contenteditable="true"></div>
-                </div>
-                <div class="field-row birth-row">
-                  <div id="birthText" class="birth-content fit-text"></div>
-                  <div class="gender-box">※ <span id="genderText"></span></div>
-                </div>
-              </div>
-              <button id="photoBox" class="photo-box" type="button" aria-label="証明写真を編集">
-                <span id="photoPlaceholder">写真</span>
-                <img id="photoPreview" alt="証明写真" hidden />
-              </button>
-            </section>
-
-            <section class="contact-table">
-              <div class="contact-grid address-kana">
-                <div>
-                  <span class="field-label">ふりがな</span>
-                  <div class="editable fit-text" data-field="addressKana" data-placeholder="ひょうごけん こうべし…" contenteditable="true"></div>
-                </div>
-                <div class="phone-label">電　話</div>
-              </div>
-              <div class="contact-grid address-main">
-                <div>
-                  <div class="inline-address">
-                    <span>現住所　〒</span>
-                    <div class="editable postal" data-field="postalCode" data-placeholder="000-0000" contenteditable="true"></div>
-                  </div>
-                  <div class="editable multiline fit-text" data-field="address" data-placeholder="兵庫県神戸市…" contenteditable="true"></div>
-                </div>
-                <div class="editable center fit-text" data-field="phone" data-placeholder="090-0000-0000" contenteditable="true"></div>
-              </div>
-              <div class="single-row">
-                <div class="editable fit-text" data-field="email" data-placeholder="Email: example@email.com" contenteditable="true"></div>
-              </div>
-              <div class="contact-grid contact-kana">
-                <div>
-                  <span class="field-label">ふりがな</span>
-                  <div class="editable fit-text" data-field="contactKana" contenteditable="true"></div>
-                </div>
-                <div class="phone-label">電　話</div>
-              </div>
-              <div class="contact-grid contact-main">
-                <div>
-                  <div class="contact-caption">連絡先 <small>（現住所以外に連絡を希望する場合のみ記入）</small></div>
-                  <div class="editable multiline fit-text" data-field="contactAddress" contenteditable="true"></div>
-                </div>
-                <div class="editable center fit-text" data-field="contactPhone" contenteditable="true"></div>
-              </div>
-            </section>
-
-            <section class="history-section left-history">
-              <div class="table-header history-header">
-                <div>年</div><div>月</div><div>学 歴・職 歴（各別にまとめて書く）</div>
-              </div>
-              <div id="leftHistoryRows" class="history-rows"></div>
-            </section>
-
-            <div class="instructions resume-footer-notes" role="note" aria-label="記入上の注意" data-export-essential="footer-instructions">
-              <div class="resume-footer-content">
-                <span class="instruction-line"><strong>記入上の注意</strong>　1．鉛筆以外の黒又は青の筆記具で記入。</span>
-                <span class="instruction-line">2．数字はアラビア数字で、文字はくずさず正確に書く。</span>
-                <span class="instruction-line">3．※印のところは、該当するものを○で囲む。</span>
-              </div>
-            </div>
-          </section>
-
-          <section class="sheet-half right-half">
-            <section class="history-section right-history">
-              <div class="table-header history-header">
-                <div>年</div><div>月</div><div>学 歴・職 歴（各別にまとめて書く）</div>
-              </div>
-              <div id="rightHistoryRows" class="history-rows"></div>
-            </section>
-
-            <section class="license-section">
-              <div class="table-header license-header">
-                <div>年</div><div>月</div><div>資 格・免 許</div>
-              </div>
-              <div id="licenseRows" class="license-rows"></div>
-            </section>
-
-            <section class="motivation-section">
-              <div class="motivation-main">
-                <div class="section-caption fixed-caption fit-text">志望の動機、特技、好きな学科、アピールポイントなど</div>
-                <div class="editable multiline fit-text" data-field="motivation" data-placeholder="志望動機や自己PRを入力" contenteditable="true"></div>
-              </div>
-              <div id="infoBoxes" class="motivation-side"></div>
-            </section>
-
-            <section class="request-section">
-              <div class="section-caption fixed-caption fit-text">本人希望記入欄（特に給料・職種・勤務時間・勤務地・その他についての希望などがあれば記入）</div>
-              <div class="editable multiline fit-text" data-field="requests" data-placeholder="貴社の規定に従います。" contenteditable="true"></div>
-            </section>
-          </section>
-          </article>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <dialog id="photoDialog" class="photo-dialog no-print">
-    <form method="dialog" class="dialog-card" id="photoEditorForm">
-      <div class="dialog-header">
-        <div>
-          <h2>証明写真を調整</h2>
-          <p>枠内をドラッグして位置を調整してください。</p>
-        </div>
-        <button type="button" id="closePhotoDialog" class="icon-button" aria-label="閉じる">×</button>
-      </div>
-      <div class="photo-editor-layout">
-        <div class="crop-stage" id="cropStage">
-          <canvas id="photoCanvas" width="360" height="480"></canvas>
-          <div class="crop-guide"><span>3 × 4</span></div>
-        </div>
-        <div class="photo-controls">
-          <label>拡大・縮小 <span id="zoomValue">100%</span>
-            <input id="photoZoom" type="range" min="100" max="400" step="1" value="100" />
-          </label>
-          <label>回転 <span id="rotationValue">0°</span>
-            <input id="photoRotation" type="range" min="-180" max="180" step="1" value="0" />
-          </label>
-          <div class="button-grid two">
-            <button id="rotateLeftBtn" type="button">↶ 90°</button>
-            <button id="rotateRightBtn" type="button">↷ 90°</button>
-            <button id="centerPhotoBtn" type="button">中央に戻す</button>
-            <button id="fitPhotoBtn" type="button">枠に合わせる</button>
-          </div>
-          <p class="hint">出力は履歴書用の3:4比率（900×1200px）です。</p>
-        </div>
-      </div>
-      <div class="dialog-actions">
-        <button id="cancelPhotoBtn" type="button">キャンセル</button>
-        <button id="applyPhotoBtn" class="primary" type="button">写真を適用</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="messageDialog" class="message-dialog no-print">
-    <form method="dialog" class="dialog-card compact">
-      <div class="dialog-header">
-        <h2 id="messageTitle">確認</h2>
-        <button class="icon-button" value="cancel" aria-label="閉じる">×</button>
-      </div>
-      <div id="messageContent" class="message-content"></div>
-      <div class="dialog-actions">
-        <button value="cancel">閉じる</button>
-      </div>
-    </form>
-  </dialog>
-  <div id="toast" class="toast no-print" role="status" aria-live="polite"></div>
-  <script src="./i18n.js?v=2.7.5"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous"></script>
-  <script src="./app.js?v=2.7.5"></script>
+<option value="200">標準（200 dpi）</option>
+<option value="300" selected="">高精細・推奨（300 dpi）</option>
+<option value="450">超高精細（450 dpi）</option>
+</select>
+</label>
+<p class="hint">印刷時は A3・横向き・倍率100%・余白なし・背景グラフィック有効を推奨します。v2.8.1では内容を用紙内に固定し、中央の折り余白を確保しながら欠けや縮小ぼけを防ぎます。</p>
+<button id="validateBtn" type="button">入力内容を確認</button>
+</div>
+</details><details>
+<summary>PDF共有</summary>
+<div class="details-body">
+<p class="hint">PDFはクラウドへアップロードしません。端末へ保存したあと、対応するスマートフォンやパソコンではPDFファイルをそのまま共有します。</p>
+<p class="hint">共有機能に未対応の場合は、Downloadsまたはファイルアプリに保存されたPDFを手動で添付してください。</p>
+</div>
+</details><details>
+<summary>バックアップ</summary>
+<div class="details-body">
+<div class="button-grid one">
+<button id="exportBtn" type="button">JSONを書き出す</button>
+<label class="file-button">JSONを読み込む
+              <input accept="application/json,.json" hidden="" id="importInput" type="file"/>
+</label>
+<button class="danger ghost" id="clearAllBtn" type="button">端末内の全書類を削除</button>
+</div>
+</div>
+</details><section class="help-card">
+<h2>印刷設定</h2>
+<p>A3・横向き・倍率100%・余白なし・ヘッダーとフッターなしを選択してください。用紙内の余白はアプリが管理します。</p>
+<div class="policy-links">
+<a href="./privacy.html" rel="noopener" target="_blank">プライバシー</a>
+<a href="./terms.html" rel="noopener" target="_blank">利用上の注意</a>
+</div>
+</section></aside>
+<section aria-label="A3履歴書プレビュー" class="preview-shell">
+<div class="preview-toolbar no-print">
+<span>A3 横 420 × 297 mm</span>
+<span id="pageFitStatus">左右2面を1枚に自動調整・中央折り安全余白あり</span>
+</div>
+<div class="scale-stage" id="scaleStage">
+<div class="a3-page-canvas" id="pageCanvas">
+<article aria-label="履歴書 A3" class="resume-sheet" id="resumeSheet">
+<section class="sheet-half left-half">
+<div class="title-row">
+<h2>履 歴 書</h2>
+<div class="as-of" id="asOfText"></div>
+</div>
+<section class="identity-area">
+<div class="identity-table">
+<div class="field-row kana-row">
+<span class="field-label">ふりがな</span>
+<div class="editable fit-text name-kana-value" contenteditable="true" data-field="nameKana" data-placeholder="チャン グエン アン"></div>
+</div>
+<div class="field-row name-row">
+<span class="field-label">氏　　名</span>
+<div class="editable name-value fit-text" contenteditable="true" data-field="name" data-placeholder="TRAN NGUYEN AN"></div>
+</div>
+<div class="field-row birth-row">
+<div class="birth-content fit-text" id="birthText"></div>
+<div class="gender-box">※ <span id="genderText"></span></div>
+</div>
+</div>
+<button aria-label="証明写真を編集" class="photo-box" id="photoBox" type="button">
+<span id="photoPlaceholder">写真</span>
+<img alt="証明写真" hidden="" id="photoPreview"/>
+</button>
+</section>
+<section class="contact-table">
+<div class="contact-grid address-kana">
+<div>
+<span class="field-label">ふりがな</span>
+<div class="editable fit-text" contenteditable="true" data-field="addressKana" data-placeholder="ひょうごけん こうべし…"></div>
+</div>
+<div class="phone-label">電　話</div>
+</div>
+<div class="contact-grid address-main">
+<div>
+<div class="inline-address">
+<span>現住所　〒</span>
+<div class="editable postal" contenteditable="true" data-field="postalCode" data-placeholder="000-0000"></div>
+</div>
+<div class="editable multiline fit-text" contenteditable="true" data-field="address" data-placeholder="兵庫県神戸市…"></div>
+</div>
+<div class="editable center fit-text" contenteditable="true" data-field="phone" data-placeholder="090-0000-0000"></div>
+</div>
+<div class="single-row">
+<div class="editable fit-text" contenteditable="true" data-field="email" data-placeholder="Email: example@email.com"></div>
+</div>
+<div class="contact-grid contact-kana">
+<div>
+<span class="field-label">ふりがな</span>
+<div class="editable fit-text" contenteditable="true" data-field="contactKana"></div>
+</div>
+<div class="phone-label">電　話</div>
+</div>
+<div class="contact-grid contact-main">
+<div>
+<div class="contact-caption">連絡先 <small>（現住所以外に連絡を希望する場合のみ記入）</small></div>
+<div class="editable multiline fit-text" contenteditable="true" data-field="contactAddress"></div>
+</div>
+<div class="editable center fit-text" contenteditable="true" data-field="contactPhone"></div>
+</div>
+</section>
+<section class="history-section left-history">
+<div class="table-header history-header">
+<div>年</div><div>月</div><div>学 歴・職 歴（各別にまとめて書く）</div>
+</div>
+<div class="history-rows" id="leftHistoryRows"></div>
+</section>
+<div aria-label="記入上の注意" class="instructions resume-footer-notes" data-export-essential="footer-instructions" role="note">
+<div class="resume-footer-content">
+<span class="instruction-line"><strong>記入上の注意</strong>　1．鉛筆以外の黒又は青の筆記具で記入。</span>
+<span class="instruction-line">2．数字はアラビア数字で、文字はくずさず正確に書く。</span>
+<span class="instruction-line">3．※印のところは、該当するものを○で囲む。</span>
+</div>
+</div>
+</section>
+<section class="sheet-half right-half">
+<section class="history-section right-history">
+<div class="table-header history-header">
+<div>年</div><div>月</div><div>学 歴・職 歴（各別にまとめて書く）</div>
+</div>
+<div class="history-rows" id="rightHistoryRows"></div>
+</section>
+<section class="license-section">
+<div class="table-header license-header">
+<div>年</div><div>月</div><div>資 格・免 許</div>
+</div>
+<div class="license-rows" id="licenseRows"></div>
+</section>
+<section class="motivation-section">
+<div class="motivation-main">
+<div class="section-caption fixed-caption fit-text">志望の動機、特技、好きな学科、アピールポイントなど</div>
+<div class="editable multiline fit-text" contenteditable="true" data-field="motivation" data-placeholder="志望動機や自己PRを入力"></div>
+</div>
+<div class="motivation-side" id="infoBoxes"></div>
+</section>
+<section class="request-section">
+<div class="section-caption fixed-caption fit-text">本人希望記入欄（特に給料・職種・勤務時間・勤務地・その他についての希望などがあれば記入）</div>
+<div class="editable multiline fit-text" contenteditable="true" data-field="requests" data-placeholder="貴社の規定に従います。"></div>
+</section>
+</section>
+</article>
+</div>
+</div>
+</section>
+</main>
+<dialog class="photo-dialog no-print" id="photoDialog">
+<form class="dialog-card" id="photoEditorForm" method="dialog">
+<div class="dialog-header">
+<div>
+<h2>証明写真を調整</h2>
+<p>枠内をドラッグして位置を調整してください。</p>
+</div>
+<button aria-label="閉じる" class="icon-button" id="closePhotoDialog" type="button">×</button>
+</div>
+<div class="photo-editor-layout">
+<div class="crop-stage" id="cropStage">
+<canvas height="480" id="photoCanvas" width="360"></canvas>
+<div class="crop-guide"><span>3 × 4</span></div>
+</div>
+<div class="photo-controls">
+<label>拡大・縮小 <span id="zoomValue">100%</span>
+<input id="photoZoom" max="400" min="100" step="1" type="range" value="100"/>
+</label>
+<label>回転 <span id="rotationValue">0°</span>
+<input id="photoRotation" max="180" min="-180" step="1" type="range" value="0"/>
+</label>
+<div class="button-grid two">
+<button id="rotateLeftBtn" type="button">↶ 90°</button>
+<button id="rotateRightBtn" type="button">↷ 90°</button>
+<button id="centerPhotoBtn" type="button">中央に戻す</button>
+<button id="fitPhotoBtn" type="button">枠に合わせる</button>
+</div>
+<p class="hint">出力は履歴書用の3:4比率（900×1200px）です。</p>
+</div>
+</div>
+<div class="dialog-actions">
+<button id="cancelPhotoBtn" type="button">キャンセル</button>
+<button class="primary" id="applyPhotoBtn" type="button">写真を適用</button>
+</div>
+</form>
+</dialog>
+<dialog class="message-dialog no-print" id="messageDialog">
+<form class="dialog-card compact" method="dialog">
+<div class="dialog-header">
+<h2 id="messageTitle">確認</h2>
+<button aria-label="閉じる" class="icon-button" value="cancel">×</button>
+</div>
+<div class="message-content" id="messageContent"></div>
+<div class="dialog-actions">
+<button value="cancel">閉じる</button>
+</div>
+</form>
+</dialog>
+<div aria-live="polite" class="toast no-print" id="toast" role="status"></div>
+<script src="./i18n.js?v=2.8.1"></script>
+<script crossorigin="anonymous" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="./app.js?v=2.8.1"></script>
 </body>
 </html>

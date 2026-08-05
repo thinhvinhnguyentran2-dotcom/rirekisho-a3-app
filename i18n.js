@@ -119,6 +119,25 @@
     "選択済みの証明写真":{"vi":"Ảnh thẻ đã chọn","en":"Selected ID photo","ne":"छानिएको परिचय फोटो"}
   });
 
+
+  Object.assign(TRANSLATIONS, {
+    "1．個人情報・連絡先":{"vi":"1. Thông tin cá nhân và liên hệ","en":"1. Personal and contact information","ne":"१. व्यक्तिगत र सम्पर्क जानकारी"},
+    "2．住所・別の連絡先":{"vi":"2. Địa chỉ và nơi liên hệ khác","en":"2. Address and alternate contact","ne":"२. ठेगाना र वैकल्पिक सम्पर्क"},
+    "3．学歴・職歴・資格":{"vi":"3. Học vấn, công việc và bằng cấp","en":"3. Education, work and qualifications","ne":"३. शिक्षा, काम र योग्यता"},
+    "4．志望動機・本人希望":{"vi":"4. Động cơ ứng tuyển và nguyện vọng","en":"4. Motivation and personal preferences","ne":"४. आवेदनको कारण र व्यक्तिगत चाहना"},
+    "5．通勤時間・扶養家族・追加項目":{"vi":"5. Thời gian đi làm, người phụ thuộc và mục bổ sung","en":"5. Commute, dependents and extra fields","ne":"५. आवागमन, आश्रित र थप विवरण"},
+    "氏名（ふりがな）":{"vi":"Họ tên (Furigana)","en":"Name (Furigana)","ne":"नाम (फुरिगाना)"},
+    "氏名（漢字・ローマ字）":{"vi":"Họ tên (Kanji hoặc chữ Latin)","en":"Name (Kanji or Roman letters)","ne":"नाम (कान्जी वा रोमन अक्षर)"},
+    "現住所（漢字）":{"vi":"Địa chỉ hiện tại (Kanji)","en":"Current address (Kanji)","ne":"हालको ठेगाना (कान्जी)"},
+    "現住所ふりがな（ひらがな）":{"vi":"Cách đọc địa chỉ hiện tại (Hiragana)","en":"Current address reading (Hiragana)","ne":"हालको ठेगानाको उच्चारण (हिरागाना)"},
+    "別の連絡先（必要な場合のみ）":{"vi":"Nơi liên hệ khác (chỉ khi cần)","en":"Alternate contact (only if needed)","ne":"वैकल्पिक सम्पर्क (आवश्यक भए मात्र)"},
+    "連絡先ふりがな":{"vi":"Cách đọc nơi liên hệ","en":"Contact address reading","ne":"सम्पर्क ठेगानाको उच्चारण"},
+    "連絡先電話番号":{"vi":"Số điện thoại nơi liên hệ","en":"Alternate contact phone","ne":"वैकल्पिक सम्पर्क फोन"},
+    "最初に氏名・生年月日・電話番号・メール・写真など、本人情報を上から順番に入力してください。":{"vi":"Hãy nhập lần lượt từ trên xuống: họ tên, ngày sinh, số điện thoại, email, ảnh và toàn bộ thông tin cá nhân.","en":"Enter all personal information from top to bottom: name, date of birth, phone, email and photo.","ne":"माथिबाट क्रमशः नाम, जन्म मिति, फोन, इमेल, फोटो र सबै व्यक्तिगत जानकारी भर्नुहोस्।"},
+    "現住所を入力し、現住所以外への連絡を希望する場合は別の連絡先も入力してください。":{"vi":"Nhập địa chỉ hiện tại; khi muốn nhận liên hệ ở nơi khác, hãy nhập thêm địa chỉ liên hệ khác.","en":"Enter the current address and add an alternate contact when communication should go elsewhere.","ne":"हालको ठेगाना भर्नुहोस् र अन्य ठाउँमा सम्पर्क चाहिने भए वैकल्पिक सम्पर्क पनि भर्नुहोस्।"},
+    "連絡先住所のふりがな":{"vi":"Cách đọc địa chỉ liên hệ","en":"Reading of the contact address","ne":"सम्पर्क ठेगानाको उच्चारण"}
+  });
+
   const originalText = new WeakMap();
   const lastAppliedText = new WeakMap();
   let applying = false;

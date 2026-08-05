@@ -1,6 +1,6 @@
-# 履歴書 A3 作成アプリ v2.7.5
+# 履歴書 A3 作成アプリ v2.8.1
 
-## v2.7.5 — sửa footer luôn hiển thị
+## v2.8.1 — sửa footer luôn hiển thị
 
 - Khôi phục bắt buộc toàn bộ nội dung `記入上の注意` trong DOM khi ứng dụng khởi động.
 - Dành riêng 11 mm ở cuối cột trái cho footer, không phụ thuộc số dòng lịch sử.
@@ -99,11 +99,11 @@ py -m http.server 5500
 - Điện thoại: tạo PDF ngay trên máy, bắt đầu lưu xuống thiết bị và mở bảng chia sẻ file PDF trực tiếp.
 
 
-## v2.7.5
+## v2.8.1
 - Added a combined total row-count control for education/work history.
 - Left and right row counts rebalance automatically while keeping the table format and official footer intact.
 
-## v2.7.5
+## v2.8.1
 - Khôi phục bố cục 履歴書 cân đối theo khung chuẩn.
 - Duy trì tối thiểu 14 dòng bên trái, 6 dòng bên phải và 5 dòng bằng cấp để bảng không bị quá ngắn hoặc méo.
 - Giữ nguyên hai ô cố định 通勤時間 và 扶養家族数（配偶者を除く） với chiều rộng 43 mm và chiều cao cân đối.
