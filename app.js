@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.8.1';
+const APP_VERSION = '2.8.2';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -110,6 +110,11 @@ let postalLookupResults = [];
 let mobileEditorScrollY = 0;
 let mobilePreviewScrollY = 0;
 let lastMobileEditorControlId = '';
+let mobileHeaderRevealTimer = null;
+let mobileScrollRaf = 0;
+let mobileResizeTimer = null;
+let lastTrackedScrollY = window.scrollY || 0;
+let mobileViewportState = window.matchMedia('(max-width: 980px)').matches;
 let photoEditor = {
   image: null,
   source: '',
@@ -1582,39 +1587,113 @@ function applyPreviewScale() {
   stage.style.height = `${page.offsetHeight * scale}px`;
 }
 
+function currentDocumentScrollY() {
+  return Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
+}
+
+function rememberMobileScrollPosition() {
+  if (!window.matchMedia('(max-width: 980px)').matches) return;
+  const y = currentDocumentScrollY();
+  if (document.body.classList.contains('mobile-preview')) mobilePreviewScrollY = y;
+  else if (document.body.classList.contains('mobile-editor')) mobileEditorScrollY = y;
+}
+
+function revealMobileHeader(delay = 0) {
+  clearTimeout(mobileHeaderRevealTimer);
+  const reveal = () => {
+    document.body.classList.remove('mobile-header-hidden');
+    document.body.classList.add('mobile-header-settling');
+    setTimeout(() => document.body.classList.remove('mobile-header-settling'), 150);
+  };
+  if (delay > 0) mobileHeaderRevealTimer = setTimeout(reveal, delay);
+  else reveal();
+}
+
+function handleMobileWindowScroll() {
+  if (!window.matchMedia('(max-width: 980px)').matches) return;
+  if (mobileScrollRaf) return;
+  mobileScrollRaf = requestAnimationFrame(() => {
+    mobileScrollRaf = 0;
+    const y = currentDocumentScrollY();
+    const moved = Math.abs(y - lastTrackedScrollY);
+    rememberMobileScrollPosition();
+    if (moved > 1.5 && y > 12) {
+      document.body.classList.add('mobile-header-hidden');
+      clearTimeout(mobileHeaderRevealTimer);
+      mobileHeaderRevealTimer = setTimeout(() => revealMobileHeader(), 230);
+    } else if (y <= 12) {
+      revealMobileHeader();
+    }
+    lastTrackedScrollY = y;
+  });
+}
+
+function handleViewportResizeStable() {
+  clearTimeout(mobileResizeTimer);
+  mobileResizeTimer = setTimeout(() => {
+    const isMobileNow = window.matchMedia('(max-width: 980px)').matches;
+    const previousMobileState = mobileViewportState;
+    mobileViewportState = isMobileNow;
+
+    if (isMobileNow !== previousMobileState) {
+      if (isMobileNow) {
+        if (!document.body.classList.contains('mobile-preview') && !document.body.classList.contains('mobile-editor')) {
+          document.body.classList.add('mobile-editor');
+          $('#mobileEditViewBtn')?.classList.add('active');
+          $('#mobilePreviewViewBtn')?.classList.remove('active');
+        }
+      } else {
+        rememberMobileScrollPosition();
+        document.body.classList.remove('mobile-editor', 'mobile-preview', 'mobile-header-hidden', 'mobile-header-settling');
+      }
+    }
+
+    if (!isMobileNow || document.body.classList.contains('mobile-preview')) applyPreviewScale();
+    fitAllText();
+    updateInstallPromotion();
+  }, 140);
+}
+
 function setMobileView(view) {
   const isMobile = window.matchMedia('(max-width: 980px)').matches;
   const wasPreview = document.body.classList.contains('mobile-preview');
   const wasEditor = document.body.classList.contains('mobile-editor');
-  if (isMobile) {
-    if (view === 'preview' && wasEditor) mobileEditorScrollY = window.scrollY;
-    if (view !== 'preview' && wasPreview) mobilePreviewScrollY = window.scrollY;
+  if (!isMobile) {
+    document.body.classList.remove('mobile-editor', 'mobile-preview', 'mobile-header-hidden');
+    return;
   }
 
-  document.body.classList.remove('mobile-editor', 'mobile-preview');
-  if (!isMobile) return;
+  const currentY = currentDocumentScrollY();
+  if (wasPreview) mobilePreviewScrollY = currentY;
+  if (wasEditor) mobileEditorScrollY = currentY;
+
   const showPreview = view === 'preview';
+  document.body.classList.remove('mobile-editor', 'mobile-preview');
   document.body.classList.add(showPreview ? 'mobile-preview' : 'mobile-editor');
   $('#mobileEditViewBtn')?.classList.toggle('active', !showPreview);
   $('#mobilePreviewViewBtn')?.classList.toggle('active', showPreview);
+  revealMobileHeader();
 
+  const targetY = showPreview ? mobilePreviewScrollY : mobileEditorScrollY;
   requestAnimationFrame(() => {
     if (showPreview) {
       applyPreviewScale();
       fitAllText();
-      requestAnimationFrame(() => window.scrollTo(0, mobilePreviewScrollY));
-    } else {
-      requestAnimationFrame(() => {
-        window.scrollTo(0, mobileEditorScrollY);
+    }
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior: 'auto' });
+      lastTrackedScrollY = Math.max(0, targetY);
+      if (!showPreview) {
         const previousControl = lastMobileEditorControlId ? document.getElementById(lastMobileEditorControlId) : null;
         if (previousControl && !previousControl.closest('details:not([open])')) {
           previousControl.classList.add('resume-edit-return');
           setTimeout(() => previousControl.classList.remove('resume-edit-return'), 900);
         }
-      });
-    }
+      }
+    });
   });
 }
+
 
 function createNewDocument() {
   if (!confirm('新しい履歴書を作成しますか？現在の内容は自動保存されています。')) return;
@@ -2175,7 +2254,7 @@ function printResumeNow() {
     $$('.selected').forEach(element => element.classList.remove('selected'));
     fitAllText();
     applyTableLayout();
-    showToast('A3横・倍率100%で印刷してください。v2.8.1では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
+    showToast('A3横・倍率100%で印刷してください。v2.8.2では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
     if (typeof window.print !== 'function') throw new Error('このブラウザは印刷機能に対応していません。');
     window.print();
   } catch (error) {
@@ -2634,13 +2713,9 @@ function bindEvents() {
   $('#previewZoom').addEventListener('input', () => { if (!$('#autoZoom').checked) applyPreviewScale(); });
   $('#autoZoom').addEventListener('change', applyPreviewScale);
   window.addEventListener('beforeprint', applyPrintSettings);
-  window.addEventListener('resize', () => {
-    applyPreviewScale(); fitAllText();
-    if (window.matchMedia('(max-width: 980px)').matches) {
-      if (!document.body.classList.contains('mobile-preview')) setMobileView('editor');
-    } else document.body.classList.remove('mobile-editor', 'mobile-preview');
-    updateInstallPromotion();
-  });
+  window.addEventListener('resize', handleViewportResizeStable, { passive: true });
+  window.addEventListener('orientationchange', handleViewportResizeStable, { passive: true });
+  window.addEventListener('scroll', handleMobileWindowScroll, { passive: true });
   window.addEventListener('beforeunload', () => persistDocuments(false));
 
   window.addEventListener('beforeinstallprompt', event => {
@@ -2656,7 +2731,6 @@ function bindEvents() {
   });
   $('#installBtn').addEventListener('click', handleInstallPrompt);
   $('#mobileInstallBtn')?.addEventListener('click', handleInstallPrompt);
-  $('#mobileInstallGuideBtn')?.addEventListener('click', showInstallGuide);
 }
 
 
@@ -2677,7 +2751,7 @@ function updateInstallPromotion() {
     mobileHelper.hidden = installed || !mobile;
   }
   if (mobileBtn) {
-    mobileBtn.textContent = deferredInstallPrompt ? 'Cài đặt ứng dụng' : 'Mở hướng dẫn cài đặt';
+    mobileBtn.textContent = 'Cài đặt ứng dụng';
   }
 }
 
@@ -2702,7 +2776,7 @@ async function handleInstallPrompt() {
 
 function showInstallGuide() {
   showMessage('Cài đặt ứng dụng vào màn hình chính', `
-    <p><strong>Android / Chrome</strong>: bấm <em>Cài đặt ứng dụng</em> hoặc menu <em>⋮</em> → <em>Install app / Add to Home screen</em>.</p>
+    <p><strong>Android / Chrome</strong>: nút <em>Cài đặt ứng dụng</em> sẽ mở cửa sổ cài trực tiếp khi trình duyệt hỗ trợ. Trường hợp chưa xuất hiện, mở menu <em>⋮</em> → <em>Install app / Add to Home screen</em>.</p>
     <p><strong>iPhone / iPad</strong>: bấm nút <em>Chia sẻ</em> của Safari → <em>Add to Home Screen</em>.</p>
     <p>Sau khi đã cài xong, lần mở sau phần nhắc cài đặt sẽ tự động ẩn.</p>
   `);
@@ -2750,7 +2824,7 @@ async function registerServiceWorker() {
     }
     return;
   }
-  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.1'); } catch (error) { console.warn('Service worker registration failed', error); }
+  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.2'); } catch (error) { console.warn('Service worker registration failed', error); }
 }
 
 function init() {
@@ -2766,6 +2840,8 @@ function init() {
   resetUndo();
   renderAll();
   setMobileView('editor');
+  lastTrackedScrollY = currentDocumentScrollY();
+  revealMobileHeader();
   updateInstallPromotion();
   registerServiceWorker();
   requestAnimationFrame(() => forceCloseBusyOverlay());
