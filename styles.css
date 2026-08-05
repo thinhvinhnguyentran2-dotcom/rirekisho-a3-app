@@ -790,7 +790,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 
 /* v2.5.6: balance left/right row counts together so table layout stays harmonious when row counts change. */
 
-/* v2.8.4: combined total-row control keeps the two history tables balanced without changing table borders or footer layout. */
+/* v2.8.6: combined total-row control keeps the two history tables balanced without changing table borders or footer layout. */
 
 
 /* v2.5.8: always keep visible borders on blank rows and keep rows filling the full table height */
@@ -1102,7 +1102,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: keep the mobile toolbar/header sticky while the form or preview scrolls. */
+/* v2.8.6: keep the mobile toolbar/header sticky while the form or preview scrolls. */
 @media (max-width: 980px) {
   .app-header {
     position: sticky !important;
@@ -1184,7 +1184,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: keep Save, Save PDF and Share PDF always visible in the sticky mobile header. */
+/* v2.8.6: keep Save, Save PDF and Share PDF always visible in the sticky mobile header. */
 .header-secondary,
 .essential-actions {
   display: contents;
@@ -1263,7 +1263,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: clip stray extra lines so borders stay neatly inside each table/box. */
+/* v2.8.6: clip stray extra lines so borders stay neatly inside each table/box. */
 .resume-sheet .identity-table,
 .resume-sheet .contact-table,
 .resume-sheet .history-section,
@@ -1322,7 +1322,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: mobile quick-entry fields, selected-photo preview, exact edit-position restore, mobile printing, and fit-to-width preview. */
+/* v2.8.6: mobile quick-entry fields, selected-photo preview, exact edit-position restore, mobile printing, and fit-to-width preview. */
 .selected-photo-card {
   width: 100%;
   display: grid;
@@ -1387,7 +1387,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: complete top-to-bottom input workflow: personal, address, history, then motivation. */
+/* v2.8.6: complete top-to-bottom input workflow: personal, address, history, then motivation. */
 .control-panel .input-step > summary {
   font-weight: 750;
 }
@@ -1418,7 +1418,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: sharpen printed lines/text and prevent thin borders from fading. */
+/* v2.8.6: sharpen printed lines/text and prevent thin borders from fading. */
 @media print {
   html, body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
   .a3-page-canvas, .resume-sheet { image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; }
@@ -1444,7 +1444,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: make table lines darker on screen and in export. */
+/* v2.8.6: make table lines darker on screen and in export. */
 .resume-sheet .field-row,
 .resume-sheet .contact-grid,
 .resume-sheet .single-row,
@@ -1465,12 +1465,12 @@ body.ui-lang-ne .control-panel { width: auto; }
 @media print { .resume-sheet .history-line, .resume-sheet .license-line, .resume-sheet .history-line > div, .resume-sheet .license-line > div, .resume-sheet .field-row, .resume-sheet .contact-grid, .resume-sheet .single-row, .resume-sheet .table-header, .resume-sheet .motivation-main > .editable, .resume-sheet .side-box > .editable, .resume-sheet .request-section > .editable { border-width: .38mm !important; } }
 
 
-/* v2.8.4: fold-safe A3 layout so content stays clear of the center fold. */
+/* v2.8.6: fold-safe A3 layout so content stays clear of the center fold. */
 .preview-toolbar .fold-safe-note { color: #1d4ed8; font-weight: 700; }
 @media (max-width: 980px) { .resume-sheet::before { width: calc(var(--half-gap) * .8); } }
 
 
-/* v2.8.4: larger center fold gap for A3 printing and mobile install helper. */
+/* v2.8.6: larger center fold gap for A3 printing and mobile install helper. */
 .mobile-install-helper { display: none; }
 @media (max-width: 980px) {
   .mobile-install-helper {
@@ -1491,7 +1491,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: print-safe full-content layout; no negative offsets, no clipping, vector-sharp borders. */
+/* v2.8.6: print-safe full-content layout; no negative offsets, no clipping, vector-sharp borders. */
 :root { --half-gap: 16mm; --fold-safe-inner-offset: 0mm; --fold-safe-edge-shift: 0mm; }
 .a3-page-canvas { box-sizing: border-box !important; }
 .resume-sheet {
@@ -1567,7 +1567,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: install-link copy controls. */
+/* v2.8.6: install-link copy controls. */
 .install-guide-link-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1595,7 +1595,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.4: email uses its own row; mobile header is a manual, non-overlay menu. */
+/* v2.8.6: email uses its own row; mobile header is a manual, non-overlay menu. */
 .contact-input-stack {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1738,4 +1738,426 @@ body.ui-lang-ne .control-panel { width: auto; }
 
 @media print {
   .mobile-header-expandable { display: none !important; }
+}
+
+
+/* v2.8.6: refined mobile form fields — single-column, readable, stable and touch-friendly. */
+@media (max-width: 680px) {
+  .control-panel {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: start !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 12px 10px calc(28px + env(safe-area-inset-bottom)) !important;
+    background: #eef2f7 !important;
+    box-sizing: border-box !important;
+  }
+
+  .control-panel > *,
+  .control-panel details,
+  .control-panel .status-card,
+  .control-panel .help-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .control-panel details,
+  .control-panel .status-card,
+  .control-panel .help-card {
+    border: 1px solid #d7e0eb !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .07) !important;
+    overflow: hidden !important;
+  }
+
+  .control-panel details > summary {
+    min-height: 54px !important;
+    padding: 13px 14px !important;
+    border-left: 0 !important;
+    border-bottom: 0 !important;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+    color: #172033 !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.35 !important;
+    box-sizing: border-box !important;
+  }
+
+  .control-panel details[open] > summary {
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: #f7faff !important;
+  }
+
+  .control-panel .input-step > summary::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 5px;
+    height: 24px;
+    margin-right: 9px;
+    border-radius: 999px;
+    background: #2563eb;
+  }
+
+  .details-body {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 14px 12px 17px !important;
+    box-sizing: border-box !important;
+  }
+
+  .control-panel label {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 7px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 0 14px !important;
+    color: #273449 !important;
+    font-size: 13px !important;
+    font-weight: 750 !important;
+    line-height: 1.4 !important;
+    box-sizing: border-box !important;
+  }
+
+  .control-panel input[type="text"],
+  .control-panel input[type="tel"],
+  .control-panel input[type="email"],
+  .control-panel input[type="date"],
+  .control-panel input[type="number"],
+  .control-panel select,
+  .control-panel textarea {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 48px !important;
+    margin: 0 !important;
+    border: 1.5px solid #b9c6d6 !important;
+    border-radius: 11px !important;
+    padding: 11px 12px !important;
+    background: #fff !important;
+    color: #0f172a !important;
+    font-family: Inter, "Noto Sans JP", "Yu Gothic UI", Meiryo, system-ui, sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    line-height: 1.35 !important;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, .035) !important;
+    box-sizing: border-box !important;
+    appearance: auto;
+  }
+
+  .control-panel textarea {
+    min-height: 112px !important;
+    resize: vertical !important;
+    overflow-y: auto !important;
+  }
+
+  #addressKanjiInput,
+  #addressKanaInput,
+  #quickContactAddressInput,
+  #motivationInput,
+  #requestsInput,
+  #infoValueInput {
+    min-height: 126px !important;
+  }
+
+  .control-panel input:focus,
+  .control-panel select:focus,
+  .control-panel textarea:focus {
+    outline: none !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .16) !important;
+  }
+
+  .control-panel input::placeholder,
+  .control-panel textarea::placeholder {
+    color: #8794a7 !important;
+    opacity: 1 !important;
+  }
+
+  .control-panel input[type="range"] {
+    width: 100% !important;
+    min-height: 30px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .control-panel input[type="checkbox"] {
+    flex: 0 0 auto !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .control-panel .form-grid,
+  .control-panel .form-grid.two,
+  .control-panel .form-grid.three,
+  .control-panel .form-grid.action-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  .control-panel .form-grid.year-month-text {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-bottom: 2px !important;
+  }
+
+  .control-panel .form-grid.year-month-text > label:last-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  .control-panel .form-grid.action-row > button {
+    width: 100% !important;
+    margin: 0 0 14px !important;
+  }
+
+  .control-panel .button-grid,
+  .control-panel .button-grid.one,
+  .control-panel .button-grid.two {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .control-panel button,
+  .control-panel .file-button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 46px !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    box-sizing: border-box !important;
+  }
+
+  .control-panel .file-button {
+    display: grid !important;
+    place-items: center !important;
+    margin-bottom: 8px !important;
+  }
+
+  .postal-lookup-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .postal-lookup-row button {
+    width: 100% !important;
+  }
+
+  .segmented {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-radius: 11px !important;
+  }
+
+  .segmented button {
+    min-height: 46px !important;
+    padding: 8px !important;
+    border-radius: 0 !important;
+  }
+
+  .subsection-title {
+    margin: 16px 0 10px !important;
+    padding: 9px 10px !important;
+    border-left-width: 5px !important;
+    border-radius: 7px !important;
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+  }
+
+  .input-order-hint,
+  .hint,
+  .layout-metric,
+  .row-count-info,
+  .lookup-status,
+  .fixed-label-note {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+  }
+
+  .input-order-hint {
+    margin: 0 0 14px !important;
+    padding: 10px 11px !important;
+  }
+
+  .fixed-label-note {
+    padding: 10px 11px !important;
+    border-radius: 10px !important;
+  }
+
+  .checkbox-row,
+  .check-row {
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: flex-start !important;
+    gap: 9px !important;
+    padding: 9px 0 !important;
+  }
+
+  .contact-input-stack {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+    width: 100% !important;
+  }
+
+  .selected-photo-card {
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+    min-height: 96px !important;
+    padding: 10px !important;
+    text-align: left !important;
+  }
+
+  .status-card {
+    min-height: 64px !important;
+    padding: 12px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .control-panel {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .details-body {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  .control-panel .form-grid.year-month-text {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+  }
+  .control-panel .form-grid.year-month-text > label:last-child {
+    grid-column: auto !important;
+  }
+}
+
+
+/* v2.8.6: restore readable, stable accordion headings on mobile. */
+@media (max-width: 680px) {
+  .control-panel details {
+    display: block !important;
+    height: auto !important;
+    min-height: 58px !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  .control-panel details[open] {
+    min-height: 58px !important;
+  }
+
+  .control-panel details > summary {
+    display: grid !important;
+    grid-template-columns: 30px minmax(0, 1fr) 22px !important;
+    align-items: center !important;
+    column-gap: 10px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 58px !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 11px 12px !important;
+    overflow: visible !important;
+    list-style: none !important;
+    color: #172033 !important;
+    background: #fff !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+  }
+
+  .control-panel details > summary::-webkit-details-marker {
+    display: none !important;
+  }
+
+  .control-panel details > summary::marker {
+    content: "" !important;
+    font-size: 0 !important;
+  }
+
+  .control-panel details > summary::before {
+    content: "" !important;
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: 10px !important;
+    height: 10px !important;
+    margin: 0 auto !important;
+    border-radius: 999px !important;
+    background: #2563eb !important;
+    box-shadow: 0 0 0 6px #dbeafe !important;
+    transform: none !important;
+  }
+
+  .control-panel details > summary::after {
+    content: "＋" !important;
+    display: grid !important;
+    place-items: center !important;
+    width: 22px !important;
+    height: 22px !important;
+    color: #2563eb !important;
+    font-size: 20px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+
+  .control-panel details[open] > summary::after {
+    content: "−" !important;
+  }
+
+  .control-panel details > summary .summary-label {
+    display: block !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 20px !important;
+    overflow: visible !important;
+    color: #172033 !important;
+    font-family: Inter, "Noto Sans JP", "Yu Gothic UI", Meiryo, system-ui, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.45 !important;
+    letter-spacing: 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    text-overflow: clip !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .control-panel details[open] > summary {
+    background: #f7faff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  .control-panel details:not([open]) > .details-body {
+    display: none !important;
+  }
 }

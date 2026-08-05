@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.8.4';
+const APP_VERSION = '2.8.6';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -150,6 +150,41 @@ const editableFields = [
   'nameKana', 'name', 'addressKana', 'postalCode', 'address', 'phone', 'email',
   'contactKana', 'contactAddress', 'contactPhone', 'motivation', 'requests'
 ];
+
+
+
+const MOBILE_SUMMARY_LABELS = [
+  '1．個人情報・連絡先',
+  '2．住所・別の連絡先',
+  '3．学歴・職歴・資格',
+  '4．志望動機・本人希望',
+  '5．通勤時間・扶養家族・追加項目',
+  '書類管理',
+  '表示・印刷・PDF設定',
+  'PDF共有',
+  'バックアップ'
+];
+
+function ensureMobileSummaryLabels() {
+  const detailsList = [...document.querySelectorAll('.control-panel details')];
+  detailsList.forEach((details, index) => {
+    const fallback = MOBILE_SUMMARY_LABELS[index] || `セクション ${index + 1}`;
+    const summary = details.querySelector(':scope > summary');
+    if (!summary) return;
+    let label = summary.querySelector('.summary-label');
+    if (!label) {
+      const current = summary.textContent.trim() || fallback;
+      summary.textContent = '';
+      label = document.createElement('span');
+      label.className = 'summary-label';
+      label.textContent = current;
+      summary.appendChild(label);
+    } else if (!label.textContent.trim()) {
+      label.textContent = fallback;
+    }
+  });
+  window.RirekishoI18n?.apply?.(document, true);
+}
 
 
 function forceCloseBusyOverlay() {
@@ -2289,7 +2324,7 @@ function printResumeNow() {
     $$('.selected').forEach(element => element.classList.remove('selected'));
     fitAllText();
     applyTableLayout();
-    showToast('A3横・倍率100%で印刷してください。v2.8.4では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
+    showToast('A3横・倍率100%で印刷してください。v2.8.6では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
     if (typeof window.print !== 'function') throw new Error('このブラウザは印刷機能に対応していません。');
     window.print();
   } catch (error) {
@@ -2912,7 +2947,7 @@ async function registerServiceWorker() {
     }
     return;
   }
-  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.4'); } catch (error) { console.warn('Service worker registration failed', error); }
+  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.6'); } catch (error) { console.warn('Service worker registration failed', error); }
 }
 
 function init() {
@@ -2923,6 +2958,7 @@ function init() {
   window.addEventListener('unhandledrejection', () => { pdfOperationActive = false; forceCloseBusyOverlay(); });
 
   ensureOfficialFooter();
+  ensureMobileSummaryLabels();
   loadStorage();
   bindEvents();
   resetUndo();
