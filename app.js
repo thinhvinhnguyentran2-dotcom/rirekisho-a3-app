@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.8.2';
+const APP_VERSION = '2.8.3';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -26,6 +26,8 @@ const REQUEST_HEIGHT_MIN_MM = 12;
 const INFO_BOX_MIN_HEIGHT_MM = 12;
 const ZIPCLOUD_API_URL = 'https://zipcloud.ibsnet.co.jp/api/search';
 const INSTALL_DONE_KEY = 'rirekisho-a3-install-done';
+const MOBILE_HEADER_REVEAL_DELAY_MS = 3000;
+const APP_PUBLIC_URL = 'https://thinhvinhnguyentran2-dotcom.github.io/rirekisho-a3-app/';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -1620,7 +1622,7 @@ function handleMobileWindowScroll() {
     if (moved > 1.5 && y > 12) {
       document.body.classList.add('mobile-header-hidden');
       clearTimeout(mobileHeaderRevealTimer);
-      mobileHeaderRevealTimer = setTimeout(() => revealMobileHeader(), 230);
+      mobileHeaderRevealTimer = setTimeout(() => revealMobileHeader(), MOBILE_HEADER_REVEAL_DELAY_MS);
     } else if (y <= 12) {
       revealMobileHeader();
     }
@@ -2254,7 +2256,7 @@ function printResumeNow() {
     $$('.selected').forEach(element => element.classList.remove('selected'));
     fitAllText();
     applyTableLayout();
-    showToast('A3横・倍率100%で印刷してください。v2.8.2では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
+    showToast('A3横・倍率100%で印刷してください。v2.8.3では全内容を用紙内に固定し、中央折り余白を保ったまま欠けとぼけを防ぎます。', 7600);
     if (typeof window.print !== 'function') throw new Error('このブラウザは印刷機能に対応していません。');
     window.print();
   } catch (error) {
@@ -2774,12 +2776,62 @@ async function handleInstallPrompt() {
   updateInstallPromotion();
 }
 
+function getInstallShareUrl() {
+  if (/\.github\.io$/i.test(location.hostname)) {
+    return `${location.origin}${location.pathname}`.replace(/\/index\.html$/i, '/');
+  }
+  return APP_PUBLIC_URL;
+}
+
+async function copyInstallLink() {
+  const url = getInstallShareUrl();
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      if (!document.execCommand('copy')) throw new Error('copy failed');
+      textarea.remove();
+    }
+    showToast('Đã sao chép liên kết. Hãy mở liên kết bằng Chrome trên Android hoặc Safari trên iPhone.', 5200);
+    const button = $('#copyInstallLinkBtn');
+    if (button) {
+      const oldText = button.textContent;
+      button.textContent = 'Đã sao chép';
+      button.disabled = true;
+      setTimeout(() => {
+        if (button.isConnected) {
+          button.textContent = oldText;
+          button.disabled = false;
+        }
+      }, 1800);
+    }
+  } catch (error) {
+    console.error(error);
+    showToast(`Không thể tự động sao chép. Liên kết: ${url}`, 8000);
+  }
+}
+
 function showInstallGuide() {
+  const installUrl = escapeHtml(getInstallShareUrl());
   showMessage('Cài đặt ứng dụng vào màn hình chính', `
-    <p><strong>Android / Chrome</strong>: nút <em>Cài đặt ứng dụng</em> sẽ mở cửa sổ cài trực tiếp khi trình duyệt hỗ trợ. Trường hợp chưa xuất hiện, mở menu <em>⋮</em> → <em>Install app / Add to Home screen</em>.</p>
-    <p><strong>iPhone / iPad</strong>: bấm nút <em>Chia sẻ</em> của Safari → <em>Add to Home Screen</em>.</p>
+    <p><strong>Android / Chrome</strong>: mở liên kết bằng Chrome, sau đó bấm <em>Cài đặt ứng dụng</em>. Trường hợp chưa xuất hiện, mở menu <em>⋮</em> → <em>Install app / Add to Home screen</em>.</p>
+    <p><strong>iPhone / iPad</strong>: mở liên kết bằng Safari, bấm nút <em>Chia sẻ</em> → <em>Add to Home Screen / Thêm vào Màn hình chính</em>.</p>
+    <p><strong>Đang mở bằng trình duyệt khác?</strong> Sao chép liên kết dưới đây, sau đó dán vào Chrome trên Android hoặc Safari trên iPhone.</p>
+    <div class="install-guide-link-row">
+      <input aria-label="Liên kết ứng dụng" id="installGuideUrl" readonly value="${installUrl}">
+      <button id="copyInstallLinkBtn" type="button">Sao chép liên kết</button>
+    </div>
     <p>Sau khi đã cài xong, lần mở sau phần nhắc cài đặt sẽ tự động ẩn.</p>
   `);
+  $('#copyInstallLinkBtn')?.addEventListener('click', copyInstallLink);
+  $('#installGuideUrl')?.addEventListener('click', event => event.currentTarget.select());
 }
 
 
@@ -2824,7 +2876,7 @@ async function registerServiceWorker() {
     }
     return;
   }
-  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.2'); } catch (error) { console.warn('Service worker registration failed', error); }
+  try { await navigator.serviceWorker.register('./service-worker.js?v=2.8.3'); } catch (error) { console.warn('Service worker registration failed', error); }
 }
 
 function init() {

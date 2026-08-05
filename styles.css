@@ -790,7 +790,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 
 /* v2.5.6: balance left/right row counts together so table layout stays harmonious when row counts change. */
 
-/* v2.8.2: combined total-row control keeps the two history tables balanced without changing table borders or footer layout. */
+/* v2.8.3: combined total-row control keeps the two history tables balanced without changing table borders or footer layout. */
 
 
 /* v2.5.8: always keep visible borders on blank rows and keep rows filling the full table height */
@@ -1102,7 +1102,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: keep the mobile toolbar/header sticky while the form or preview scrolls. */
+/* v2.8.3: keep the mobile toolbar/header sticky while the form or preview scrolls. */
 @media (max-width: 980px) {
   .app-header {
     position: sticky !important;
@@ -1184,7 +1184,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: keep Save, Save PDF and Share PDF always visible in the sticky mobile header. */
+/* v2.8.3: keep Save, Save PDF and Share PDF always visible in the sticky mobile header. */
 .header-secondary,
 .essential-actions {
   display: contents;
@@ -1263,7 +1263,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: clip stray extra lines so borders stay neatly inside each table/box. */
+/* v2.8.3: clip stray extra lines so borders stay neatly inside each table/box. */
 .resume-sheet .identity-table,
 .resume-sheet .contact-table,
 .resume-sheet .history-section,
@@ -1322,7 +1322,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: mobile quick-entry fields, selected-photo preview, exact edit-position restore, mobile printing, and fit-to-width preview. */
+/* v2.8.3: mobile quick-entry fields, selected-photo preview, exact edit-position restore, mobile printing, and fit-to-width preview. */
 .selected-photo-card {
   width: 100%;
   display: grid;
@@ -1387,7 +1387,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: complete top-to-bottom input workflow: personal, address, history, then motivation. */
+/* v2.8.3: complete top-to-bottom input workflow: personal, address, history, then motivation. */
 .control-panel .input-step > summary {
   font-weight: 750;
 }
@@ -1418,7 +1418,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: sharpen printed lines/text and prevent thin borders from fading. */
+/* v2.8.3: sharpen printed lines/text and prevent thin borders from fading. */
 @media print {
   html, body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
   .a3-page-canvas, .resume-sheet { image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; }
@@ -1444,7 +1444,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: make table lines darker on screen and in export. */
+/* v2.8.3: make table lines darker on screen and in export. */
 .resume-sheet .field-row,
 .resume-sheet .contact-grid,
 .resume-sheet .single-row,
@@ -1465,12 +1465,12 @@ body.ui-lang-ne .control-panel { width: auto; }
 @media print { .resume-sheet .history-line, .resume-sheet .license-line, .resume-sheet .history-line > div, .resume-sheet .license-line > div, .resume-sheet .field-row, .resume-sheet .contact-grid, .resume-sheet .single-row, .resume-sheet .table-header, .resume-sheet .motivation-main > .editable, .resume-sheet .side-box > .editable, .resume-sheet .request-section > .editable { border-width: .38mm !important; } }
 
 
-/* v2.8.2: fold-safe A3 layout so content stays clear of the center fold. */
+/* v2.8.3: fold-safe A3 layout so content stays clear of the center fold. */
 .preview-toolbar .fold-safe-note { color: #1d4ed8; font-weight: 700; }
 @media (max-width: 980px) { .resume-sheet::before { width: calc(var(--half-gap) * .8); } }
 
 
-/* v2.8.2: larger center fold gap for A3 printing and mobile install helper. */
+/* v2.8.3: larger center fold gap for A3 printing and mobile install helper. */
 .mobile-install-helper { display: none; }
 @media (max-width: 980px) {
   .mobile-install-helper {
@@ -1491,7 +1491,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: print-safe full-content layout; no negative offsets, no clipping, vector-sharp borders. */
+/* v2.8.3: print-safe full-content layout; no negative offsets, no clipping, vector-sharp borders. */
 :root { --half-gap: 16mm; --fold-safe-inner-offset: 0mm; --fold-safe-edge-shift: 0mm; }
 .a3-page-canvas { box-sizing: border-box !important; }
 .resume-sheet {
@@ -1567,7 +1567,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.8.2: one-tap mobile install button and scroll-stable auto-hiding header. */
+/* v2.8.3: one-tap mobile install button and scroll-stable auto-hiding header. */
 @media (max-width: 980px) {
   .app-header {
     will-change: transform;
@@ -1594,4 +1594,32 @@ body.ui-lang-ne .control-panel { width: auto; }
 
 @media (prefers-reduced-motion: reduce) {
   .app-header { transition: none !important; }
+}
+
+
+/* v2.8.3: reveal mobile header three seconds after scrolling stops and style install-link copy controls. */
+.install-guide-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+  margin: 10px 0 14px;
+}
+.install-guide-link-row input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 12px;
+}
+.install-guide-link-row button {
+  min-height: 40px;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .install-guide-link-row { grid-template-columns: 1fr; }
+  .install-guide-link-row button { width: 100%; }
 }

@@ -6,3 +6,5 @@ backup_before_*/
 backup_*/
 *.zip
 node_modules/
+backup_before_*/
+backup_*/
