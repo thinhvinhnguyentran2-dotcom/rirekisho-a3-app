@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '2.7.4';
+const APP_VERSION = '2.7.5';
 const STORAGE_KEY = 'rirekisho-a3-documents-v21';
 const ACTIVE_KEY = 'rirekisho-a3-active-v21';
 const SETTINGS_KEY = 'rirekisho-a3-settings-v21';
@@ -106,6 +106,9 @@ let busyWatchdogTimer = null;
 let postalLookupTimer = null;
 let postalLookupRequestId = 0;
 let postalLookupResults = [];
+let mobileEditorScrollY = 0;
+let mobilePreviewScrollY = 0;
+let lastMobileEditorControlId = '';
 let photoEditor = {
   image: null,
   source: '',
@@ -628,6 +631,15 @@ function schedulePostalLookup(rawValue) {
   postalLookupTimer = setTimeout(() => lookupPostalCode(digits, { silentIncomplete: true }), 450);
 }
 
+function syncQuickEntryControls() {
+  setControlValue('#quickNameInput', state.name || '');
+  setControlValue('#quickPhoneInput', state.phone || '');
+  setControlValue('#quickEmailInput', state.email || '');
+  setControlValue('#quickContactAddressInput', state.contactAddress || '');
+  setControlValue('#quickMotivationInput', state.motivation || '');
+  setControlValue('#quickRequestsInput', state.requests || '');
+}
+
 function bindControlValues() {
   setControlValue('#documentTitle', state.title || '');
   setControlValue('#asOfDate', state.asOfDate || '');
@@ -685,6 +697,7 @@ function bindControlValues() {
   $('#requestSectionHeight').min = String(Math.ceil(textMetrics.requestMinHeight));
   $('#requestSectionHeight').max = String(Math.floor(textMetrics.requestMaxHeight));
   $('#requestSectionHeightValue').textContent = `${textMetrics.requestHeight.toFixed(0)} mm`;
+  syncQuickEntryControls();
 
   const margins = state.layout.printMargins;
   setControlValue('#printMarginTop', margins.top);
@@ -714,15 +727,22 @@ function renderTextFields() {
   applyCustomFieldSizing();
   renderInfoBoxes();
   const photo = $('#photoPreview');
+  const selectedPhotoCard = $('#selectedPhotoCard');
+  const selectedPhotoThumb = $('#selectedPhotoThumb');
   if (state.photo) {
     photo.src = state.photo;
     photo.hidden = false;
     $('#photoPlaceholder').hidden = true;
+    if (selectedPhotoThumb) selectedPhotoThumb.src = state.photo;
+    if (selectedPhotoCard) selectedPhotoCard.hidden = false;
   } else {
     photo.removeAttribute('src');
     photo.hidden = true;
     $('#photoPlaceholder').hidden = false;
+    if (selectedPhotoThumb) selectedPhotoThumb.removeAttribute('src');
+    if (selectedPhotoCard) selectedPhotoCard.hidden = true;
   }
+  syncQuickEntryControls();
 }
 
 
@@ -1536,12 +1556,17 @@ function applyPreviewScale() {
   if (auto) {
     const shell = $('.preview-shell');
     const toolbar = $('.preview-toolbar');
-    const availableWidth = Math.max(280, shell.clientWidth - 40);
+    const isMobileWidthPreview = window.matchMedia('(max-width: 980px)').matches && document.body.classList.contains('mobile-preview');
+    const availableWidth = Math.max(240, shell.clientWidth - (isMobileWidthPreview ? 8 : 40));
     const availableHeight = Math.max(240, shell.clientHeight - (toolbar?.offsetHeight || 0) - 42);
     const pageWidth = page.offsetWidth || 1587;
     const pageHeight = page.offsetHeight || 1123;
-    scale = Math.min(1, availableWidth / pageWidth, availableHeight / pageHeight);
-    $('#previewZoomLabel').textContent = `${Math.round(scale * 100)}%（A3全体）`;
+    scale = isMobileWidthPreview
+      ? Math.min(1, availableWidth / pageWidth)
+      : Math.min(1, availableWidth / pageWidth, availableHeight / pageHeight);
+    $('#previewZoomLabel').textContent = isMobileWidthPreview
+      ? `${Math.round(scale * 100)}%（画面幅）`
+      : `${Math.round(scale * 100)}%（A3全体）`;
   } else {
     $('#previewZoomLabel').textContent = `${Math.round(scale * 100)}%`;
   }
@@ -1554,17 +1579,36 @@ function applyPreviewScale() {
 
 function setMobileView(view) {
   const isMobile = window.matchMedia('(max-width: 980px)').matches;
+  const wasPreview = document.body.classList.contains('mobile-preview');
+  const wasEditor = document.body.classList.contains('mobile-editor');
+  if (isMobile) {
+    if (view === 'preview' && wasEditor) mobileEditorScrollY = window.scrollY;
+    if (view !== 'preview' && wasPreview) mobilePreviewScrollY = window.scrollY;
+  }
+
   document.body.classList.remove('mobile-editor', 'mobile-preview');
   if (!isMobile) return;
-  document.body.classList.add(view === 'preview' ? 'mobile-preview' : 'mobile-editor');
-  $('#mobileEditViewBtn')?.classList.toggle('active', view !== 'preview');
-  $('#mobilePreviewViewBtn')?.classList.toggle('active', view === 'preview');
-  if (view === 'preview') {
-    requestAnimationFrame(() => {
+  const showPreview = view === 'preview';
+  document.body.classList.add(showPreview ? 'mobile-preview' : 'mobile-editor');
+  $('#mobileEditViewBtn')?.classList.toggle('active', !showPreview);
+  $('#mobilePreviewViewBtn')?.classList.toggle('active', showPreview);
+
+  requestAnimationFrame(() => {
+    if (showPreview) {
       applyPreviewScale();
       fitAllText();
-    });
-  }
+      requestAnimationFrame(() => window.scrollTo(0, mobilePreviewScrollY));
+    } else {
+      requestAnimationFrame(() => {
+        window.scrollTo(0, mobileEditorScrollY);
+        const previousControl = lastMobileEditorControlId ? document.getElementById(lastMobileEditorControlId) : null;
+        if (previousControl && !previousControl.closest('details:not([open])')) {
+          previousControl.classList.add('resume-edit-return');
+          setTimeout(() => previousControl.classList.remove('resume-edit-return'), 900);
+        }
+      });
+    }
+  });
 }
 
 function createNewDocument() {
@@ -2087,6 +2131,23 @@ async function createPdfBlob() {
   }
 }
 
+function printResumeNow() {
+  try {
+    persistDocuments(false);
+    applyPrintSettings();
+    document.activeElement?.blur();
+    selectedRow = null;
+    $$('.selected').forEach(element => element.classList.remove('selected'));
+    fitAllText();
+    showToast('スマートフォンでも印刷画面を開きます。用紙はA3・横向き・倍率100%を推奨します。', 6500);
+    if (typeof window.print !== 'function') throw new Error('このブラウザは印刷機能に対応していません。');
+    window.print();
+  } catch (error) {
+    console.error(error);
+    showToast(`印刷画面を開けませんでした：${error?.message || '不明なエラー'}`, 7000);
+  }
+}
+
 async function downloadPDF() {
   if (pdfOperationActive) return;
   pdfOperationActive = true;
@@ -2221,6 +2282,7 @@ function bindEvents() {
       if (field === 'address') setControlValue('#addressKanjiInput', state[field]);
       if (field === 'addressKana') setControlValue('#addressKanaInput', state[field]);
       if (field === 'postalCode') schedulePostalLookup(state[field]);
+      syncQuickEntryControls();
       fitElement(element);
       markChanged();
     });
@@ -2228,6 +2290,27 @@ function bindEvents() {
       event.preventDefault();
       const pastedText = event.clipboardData.getData('text/plain');
       document.execCommand('insertText', false, pastedText);
+    });
+  });
+
+  const quickFieldMap = {
+    quickNameInput: 'name',
+    quickPhoneInput: 'phone',
+    quickEmailInput: 'email',
+    quickContactAddressInput: 'contactAddress',
+    quickMotivationInput: 'motivation',
+    quickRequestsInput: 'requests'
+  };
+  Object.entries(quickFieldMap).forEach(([controlId, field]) => {
+    const control = $(`#${controlId}`);
+    if (!control) return;
+    control.addEventListener('input', event => {
+      state[field] = String(event.target.value || '').replace(/\r/g, '');
+      if (field === 'motivation') setControlValue('#motivationInput', state[field]);
+      if (field === 'requests') setControlValue('#requestsInput', state[field]);
+      renderTextFields();
+      fitAllText();
+      markChanged();
     });
   });
 
@@ -2468,6 +2551,7 @@ function bindEvents() {
   });
   $('#photoBox').addEventListener('click', () => state.photo ? openPhotoEditor(state.photo) : $('#photoInput').click());
   $('#editPhotoBtn').addEventListener('click', () => openPhotoEditor(state.photo));
+  $('#selectedPhotoCard')?.addEventListener('click', () => { if (state.photo) openPhotoEditor(state.photo); });
   $('#removePhotoBtn').addEventListener('click', () => {
     if (!state.photo || !confirm('証明写真を削除しますか？')) return;
     state.photo = ''; renderTextFields(); bindControlValues(); markChanged();
@@ -2490,7 +2574,7 @@ function bindEvents() {
     event.target.value = '';
   });
   $('#validateBtn').addEventListener('click', validateDocument);
-  $('#printBtn').addEventListener('click', async () => { await prepareSheetForExport(); window.print(); });
+  $('#printBtn').addEventListener('click', printResumeNow);
   $('#pdfBtn').addEventListener('click', downloadPDF);
   $('#shareBtn').addEventListener('click', sharePDF);
 
@@ -2498,6 +2582,12 @@ function bindEvents() {
     if (event.key === 'Escape' && pdfOperationActive) {
       pdfOperationActive = false; setBusy(false);
       showToast('PDF処理画面を閉じました。必要に応じてもう一度お試しください。', 4000);
+    }
+  });
+  document.addEventListener('focusin', event => {
+    const target = event.target;
+    if (window.matchMedia('(max-width: 980px)').matches && target instanceof HTMLElement && target.id && target.closest('.control-panel')) {
+      lastMobileEditorControlId = target.id;
     }
   });
   $('#mobileEditViewBtn')?.addEventListener('click', () => setMobileView('editor'));

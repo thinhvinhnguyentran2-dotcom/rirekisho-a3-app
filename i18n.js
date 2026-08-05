@@ -104,6 +104,21 @@
     }
   });
 
+
+  Object.assign(TRANSLATIONS, {
+    "学歴・職歴の後に入力する情報":{"vi":"Thông tin nhập tiếp sau học vấn/công việc","en":"Information entered after education/work","ne":"शिक्षा/कामपछि भर्ने जानकारी"},
+    "スマートフォンで学歴・職歴の入力を終えたあと、そのまま基本情報と応募内容を続けて入力できます。":{"vi":"Sau khi nhập xong học vấn/công việc trên điện thoại, có thể tiếp tục nhập thông tin cơ bản và nội dung ứng tuyển ngay bên dưới.","en":"After entering education/work on a phone, continue with basic details and application content directly below.","ne":"फोनमा शिक्षा/काम भरेपछि तलै आधारभूत विवरण र आवेदन सामग्री भर्न जारी राख्न सकिन्छ।"},
+    "氏名":{"vi":"Họ tên","en":"Full name","ne":"पूरा नाम"},
+    "電話番号":{"vi":"Số điện thoại","en":"Phone number","ne":"फोन नम्बर"},
+    "メールアドレス":{"vi":"Email","en":"Email address","ne":"इमेल ठेगाना"},
+    "連絡先住所":{"vi":"Nơi liên hệ","en":"Contact address","ne":"सम्पर्क ठेगाना"},
+    "志望動機":{"vi":"Động cơ ứng tuyển","en":"Application motivation","ne":"आवेदनको कारण"},
+    "本人希望・その他の希望":{"vi":"Nguyện vọng và yêu cầu khác","en":"Personal preferences and other requests","ne":"व्यक्तिगत चाहना र अन्य अनुरोध"},
+    "選択済み写真":{"vi":"Ảnh đã chọn","en":"Selected photo","ne":"छानिएको फोटो"},
+    "タップして写真を調整":{"vi":"Chạm để chỉnh ảnh","en":"Tap to adjust the photo","ne":"फोटो मिलाउन ट्याप गर्नुहोस्"},
+    "選択済みの証明写真":{"vi":"Ảnh thẻ đã chọn","en":"Selected ID photo","ne":"छानिएको परिचय फोटो"}
+  });
+
   const originalText = new WeakMap();
   const lastAppliedText = new WeakMap();
   let applying = false;

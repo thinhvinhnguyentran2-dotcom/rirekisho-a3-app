@@ -10,7 +10,7 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=2.7.4" />
+  <link rel="stylesheet" href="./styles.css?v=2.7.5" />
 </head>
 <body>
   <header class="app-header no-print">
@@ -18,7 +18,7 @@
       <div class="brand-icon" aria-hidden="true">履</div>
       <div>
         <h1>履歴書 A3 作成アプリ</h1>
-        <p>A3横1枚・写真編集・和暦/西暦・PDF保存/共有・オフライン対応 <strong>v2.7.4</strong></p>
+        <p>A3横1枚・写真編集・和暦/西暦・PDF保存/共有・オフライン対応 <strong>v2.7.5</strong></p>
       </div>
     </div>
     <div class="header-actions">
@@ -40,9 +40,9 @@
         <button id="saveBtn" type="button">保存</button>
         <button id="pdfBtn" class="primary" type="button">PDF保存</button>
         <button id="shareBtn" type="button">PDF共有</button>
+        <button id="printBtn" type="button">印刷</button>
       </div>
       <div class="header-secondary header-secondary-end">
-        <button id="printBtn" type="button">印刷</button>
         <button id="installBtn" type="button" hidden>アプリをインストール</button>
       </div>
     </div>
@@ -139,6 +139,10 @@
           <label class="file-button">写真を選択
             <input id="photoInput" type="file" accept="image/*" hidden />
           </label>
+          <button id="selectedPhotoCard" class="selected-photo-card" type="button" hidden>
+            <img id="selectedPhotoThumb" alt="選択済みの証明写真" />
+            <span><strong>選択済み写真</strong><small>タップして写真を調整</small></span>
+          </button>
           <div class="button-grid two">
             <button id="editPhotoBtn" type="button" disabled>写真を調整</button>
             <button id="removePhotoBtn" type="button" disabled>写真を削除</button>
@@ -257,6 +261,33 @@
             <button id="deleteRowBtn" class="danger" type="button">行を削除</button>
           </div>
           <div id="rowCountInfo" class="row-count-info"></div>
+        </div>
+      </details>
+
+      <details open id="quickEntryDetails">
+        <summary>学歴・職歴の後に入力する情報</summary>
+        <div class="details-body quick-entry-body">
+          <p class="hint">スマートフォンで学歴・職歴の入力を終えたあと、そのまま基本情報と応募内容を続けて入力できます。</p>
+          <label>氏名
+            <input id="quickNameInput" type="text" maxlength="120" autocomplete="name" placeholder="例：TRAN NGUYEN AN" />
+          </label>
+          <div class="form-grid two">
+            <label>電話番号
+              <input id="quickPhoneInput" type="tel" maxlength="40" autocomplete="tel" placeholder="例：090-0000-0000" />
+            </label>
+            <label>メールアドレス
+              <input id="quickEmailInput" type="email" maxlength="160" autocomplete="email" placeholder="例：example@email.com" />
+            </label>
+          </div>
+          <label>連絡先住所
+            <textarea id="quickContactAddressInput" rows="3" placeholder="現住所以外に連絡を希望する場合のみ入力"></textarea>
+          </label>
+          <label>志望動機
+            <textarea id="quickMotivationInput" rows="6" placeholder="志望の動機、特技、好きな学科、アピールポイントなどを入力"></textarea>
+          </label>
+          <label>本人希望・その他の希望
+            <textarea id="quickRequestsInput" rows="4" placeholder="給料・職種・勤務時間・勤務地などの希望を入力"></textarea>
+          </label>
         </div>
       </details>
 
@@ -537,8 +568,8 @@
     </form>
   </dialog>
   <div id="toast" class="toast no-print" role="status" aria-live="polite"></div>
-  <script src="./i18n.js?v=2.7.4"></script>
+  <script src="./i18n.js?v=2.7.5"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous"></script>
-  <script src="./app.js?v=2.7.4"></script>
+  <script src="./app.js?v=2.7.5"></script>
 </body>
 </html>

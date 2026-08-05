@@ -1088,7 +1088,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.7.4: keep the mobile toolbar/header sticky while the form or preview scrolls. */
+/* v2.7.5: keep the mobile toolbar/header sticky while the form or preview scrolls. */
 @media (max-width: 980px) {
   .app-header {
     position: sticky !important;
@@ -1170,7 +1170,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.7.4: keep Save, Save PDF and Share PDF always visible in the sticky mobile header. */
+/* v2.7.5: keep Save, Save PDF and Share PDF always visible in the sticky mobile header. */
 .header-secondary,
 .essential-actions {
   display: contents;
@@ -1249,7 +1249,7 @@ body.ui-lang-ne .control-panel { width: auto; }
 }
 
 
-/* v2.7.4: clip stray extra lines so borders stay neatly inside each table/box. */
+/* v2.7.5: clip stray extra lines so borders stay neatly inside each table/box. */
 .resume-sheet .identity-table,
 .resume-sheet .contact-table,
 .resume-sheet .history-section,
@@ -1305,4 +1305,69 @@ body.ui-lang-ne .control-panel { width: auto; }
   .resume-sheet .license-rows {
     overflow: hidden !important;
   }
+}
+
+
+/* v2.7.5: mobile quick-entry fields, selected-photo preview, exact edit-position restore, mobile printing, and fit-to-width preview. */
+.selected-photo-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 9px;
+  margin: 9px 0 2px;
+  text-align: left;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.selected-photo-card img {
+  width: 72px;
+  height: 96px;
+  display: block;
+  object-fit: cover;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: #fff;
+}
+.selected-photo-card span { display: grid; gap: 4px; min-width: 0; }
+.selected-photo-card strong { font-size: 13px; }
+.selected-photo-card small { color: #64748b; font-size: 11px; }
+.quick-entry-body textarea { min-height: 92px; }
+.resume-edit-return { outline: 3px solid rgba(37,99,235,.32) !important; outline-offset: 2px; }
+
+@media (max-width: 980px) {
+  .essential-actions { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .essential-actions #printBtn { display: block !important; }
+  body.mobile-preview .preview-shell {
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: 0 4px 24px !important;
+    align-items: stretch !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+  body.mobile-preview .preview-toolbar {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 6px 8px !important;
+    box-sizing: border-box;
+  }
+  body.mobile-preview .scale-stage {
+    margin: 0 auto !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .essential-actions { gap: 4px !important; }
+  .essential-actions button {
+    min-height: 38px !important;
+    padding: 4px 3px !important;
+    font-size: 11px !important;
+    line-height: 1.1;
+  }
+  .selected-photo-card { grid-template-columns: 60px minmax(0, 1fr); }
+  .selected-photo-card img { width: 60px; height: 80px; }
 }
